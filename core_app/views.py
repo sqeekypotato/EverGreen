@@ -19,10 +19,11 @@ from core_app.functions import fixQuotesForCSV, convertToInt
 
 # Create your views here.
 def home(request):
-
+    message = 'Hello and welcome to Evergreen Financial!'
     template = loader.get_template('core_app/index.html')
     context = {
-        'user':request.user
+        'user':request.user,
+        'message':message
     }
     return HttpResponse(template.render(context, request))
 
@@ -49,12 +50,6 @@ def newAccount(request):
     else:
         return redirect('home')
 
-# def redirect_details(request): #this is required to ensure that account_details starts with a GET request
-#     if request.user.is_authenticated:
-#         return redirect('account_details')
-#     else:
-#         return redirect('home')
-
 def account_details(request):
     if request.user.is_authenticated:
         dataframe = request.session.get('df', None)
@@ -71,7 +66,7 @@ def account_details(request):
             columnNum.append((i, j))
 
         if request.method == 'POST':
-            form = AccountSelectForm(request.POST)
+            form = AccountSelectForm(columnNum, request.POST)
             if form.is_valid():
                 # sets up users account
                 userAccount = BankAccounts()
@@ -88,6 +83,7 @@ def account_details(request):
                 # adds transactions to account
                 dataframe[int(request.POST['date'])] = pd.to_datetime(dataframe[int(request.POST['date'])]) #changes string to date format
                 dataframe = dataframe.fillna(0) #replaces NaN with 0
+                records_added = 0
                 for index, row in dataframe.iterrows():
                     credit = row[int(request.POST['credit'])]
                     debit = row[int(request.POST['debit'])]
@@ -113,9 +109,21 @@ def account_details(request):
                                         monthName = monthName,
                                         year = year
                                         )
-                    trans.save()
-                    print(trans)
-        form = AccountSelectForm()
+                    trans.save() #adds record to the database
+                    records_added += 1
+
+
+
+                message = '{} records added to the database.  We are working on processing them now'.format(records_added)
+
+                template = loader.get_template('core_app/index.html')
+                context = {
+                    'user': request.user,
+                    'message': message
+                }
+                return HttpResponse(template.render(context, request))
+
+        form = AccountSelectForm(columnNum)
 
         template = loader.get_template('core_app/account_details.html')
         context = {
