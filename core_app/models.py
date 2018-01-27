@@ -43,7 +43,8 @@ class Tags (models.Model):
 
     tag = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    average_amount = models.IntegerField()
+    tag_average_amount = models.IntegerField()
+    cat_average_amount = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -52,7 +53,8 @@ class Tags (models.Model):
 class UniversalTags (models.Model):
     tag = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    average_amount = models.IntegerField()
+    tag_average_amount = models.IntegerField()
+    cat_average_amount = models.IntegerField()
 
     def __str__(self):
         return '{} - {}'.format(self.category, self.tag)
