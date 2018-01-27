@@ -1,0 +1,10 @@
+{% extends "core_app/layout.html" %}
+{% block content %}
+
+<form action="/new_account/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="file">
+    <button type="submit">Upload</button>
+</form>
+
+{% endblock %}

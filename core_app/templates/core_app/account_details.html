@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New Account</title>
+</head>
+<body>
+      <h2 style = "text-align: center;">Contact Form</h2>
+
+      {% for message in form.name.errors %}
+       <div>{{ message }}</div>
+      {% endfor %}
+
+       {% for message in form.balance.errors %}
+       <div>{{ message }}</div>
+      {% endfor %}
+
+      <form action = "" method = "post">
+          {% csrf_token %}
+            {{ form.management_form }}
+            {{ form.errors }}
+            {{ form.non_field_errors }}
+            {{ form.non_form_errors }}
+         <fieldset>
+            <legend>Account Details Form</legend>
+
+               {{ form.name.label }}
+               {{ form.name }}
+
+               {{ form.balance.label }}
+               {{ form.balance }}
+
+               {{ form.credit.label }}
+               {{ form.credit }}
+
+               {{ form.debit.label }}
+               {{ form.debit }}
+
+               {{ form.date.label }}
+               {{ form.date }}
+
+               {{ form.rows.label }}
+               {{ form.rows }}
+
+               {{ form.description.label }}
+               {{ form.description }}
+
+               <button type="submit">Submit</button>
+         </fieldset>
+      </form>
+
+      {{ html|safe }}
+
+</body>
+</html>
