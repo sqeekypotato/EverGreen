@@ -1,0 +1,34 @@
+{% extends "core_app/layout.html" %}
+{% block content %}
+{% load staticfiles%}
+<script src="{% static 'core_app/custom.js' %}"></script>
+
+<datalist id="cats">
+
+{% for value in category %}
+    <option value= "{{ value }}" >
+{% endfor %}
+</datalist>
+
+<div>
+<form action="" method="post" id="transTags">
+    <table width="100%">
+        <th> Date </th> <th> Description </th><th>Income</th><th>Debit</th><th>Category</th><th>Tag</th>
+    {% for item in tableList %}
+        <tr>
+            {% for i in item|slice:"1:" %}
+            <td>{{ i }}</td>
+            {% endfor %}
+        <td><input type="text" name= "cat_{{ item.0 }}" list="cats"></td>
+
+        <td><input type="text" name= "tag_{{ item.0 }}" list="tag_option{{ item.0 }}"></td>
+        <datalist id="tag_option{{ item.0 }}">
+        </datalist>
+        </tr>
+    {% endfor %}
+    </table>
+    <input type="submit" />
+</form>
+</div>
+
+{% endblock %}
