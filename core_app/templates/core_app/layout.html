@@ -5,7 +5,7 @@
     <title>EverGreen Financial</title>
 
     {% load static %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
 
     <!--google analytics-->
@@ -30,14 +30,13 @@
     <!--Markdown cdn-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.7/marked.min.js"></script>
 
-    <!--custom js-->
-    <script src="{% static 'core_app/custom.js' %}"></script>
-    <script type="text/javascript" src="{% static 'core_app/csrf.js' %}"></script>
-
     <!--bootstrap-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css"  href="{% static 'core_app/custom.css' %}" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--custom-->
+    <script type="text/javascript" src="{% static 'core_app/csrf.js' %}"></script>
 
 </head>
 <body>
@@ -58,6 +57,12 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/admin">admin</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/signup">signup</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/tags">tags</a>
             </li>
           </ul>
 

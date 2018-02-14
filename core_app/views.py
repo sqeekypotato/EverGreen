@@ -15,7 +15,7 @@ from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectF
 from core_app.models import BankAccounts, Transaction
 from core_app.functions import fixQuotesForCSV, convertToInt
 
-
+from .models import Transaction, Tags, UniversalTags
 
 # Create your views here.
 def home(request):
@@ -135,6 +135,60 @@ def account_details(request):
     else:
         return redirect('home')
 
+def tags(request):
+    if request.user.is_authenticated:
+
+        trans = Transaction.objects.all().filter(user=request.user, tag=None)[:20] #gets twenty records
+        cats = Tags.objects.distinct().values_list('category', flat=True)
+        tempcats = UniversalTags.objects.distinct().values_list('category', flat=True)
+        cats1 = list(cats)
+        tempcats1 = list(tempcats)
+        cats1 += tempcats1
+        cats1.sort()
+
+        tableList=[]
+        for i in trans:
+            temp_list = [i.id, i.date, i.description, float(i.credit)/100, float(i.debit)/100]
+            tableList.append(temp_list)
+
+        template = loader.get_template('core_app/tags.html')
+        context = {
+            'tableList' : tableList,
+            'category' : cats1
+        }
+        print(cats1)
+        return HttpResponse(template.render(context, request))
+    else:
+        message = 'Please login first!'
+        template = loader.get_template('core_app/index.html')
+        context = {
+            'user': request.user,
+            'message': message
+        }
+        return HttpResponse(template.render(context, request))
+
+def get_tag(request):
+    if request.user.is_authenticated:
+        category = request._post['category']
+        number = request._post['number']
+        number = number.replace('cat', '#tag_option')
+
+        userTagsQuery = Tags.objects.filter(category=category)
+        uniTagQuery = UniversalTags.objects.filter(category=category)
+        temp_list = []
+        for item in userTagsQuery:
+            if item.tag not in temp_list:
+                temp_list.append(item.tag)
+        for item in uniTagQuery:
+            if item.tag not in temp_list:
+                temp_list.append(item.tag)
+        temp_list.sort()
+        result = {'tags': temp_list, 'number':number}
+
+        return JsonResponse(result)
+
+
+# ______________________________________________________________
 def signup(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)

@@ -35,7 +35,10 @@ urlpatterns = [
     # url(r'^redirect_details/$', views.redirect_details, name='redirect_details'),
     # account_details
     url(r'^account_details/$', views.account_details, name='account_details'),
-
+    # tags
+    url(r'^tags/$', views.tags, name='tags'),
+    # get_tags
+    url(r'^get_tag/$', views.get_tag, name='get_tags'),
     # # signup
     url(r'^signup/$', views.signup, name='signup'),
     # # login
