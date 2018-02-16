@@ -13,7 +13,7 @@ import calendar
 
 from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm
 from core_app.models import BankAccounts, Transaction
-from core_app.functions import fixQuotesForCSV, convertToInt
+from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -137,6 +137,21 @@ def account_details(request):
 
 def tags(request):
     if request.user.is_authenticated:
+        if request.method == "POST":
+            form_dict = request._post
+            tagDict = buildTagDict(form_dict)
+
+            for transNum, values in tagDict.items():
+                temp_record = Transaction.objects.get(id=transNum)
+                temp_record.tag = values['tag']
+                temp_record.category = values['cat']
+                temp_record.year = temp_record.date.year
+                temp_record.monthNum = temp_record.date.month
+                temp_record.monthName = temp_record.date.strftime("%b")
+                temp_record.save()
+
+                return redirect('tags')
+
 
         trans = Transaction.objects.all().filter(user=request.user, tag=None)[:20] #gets twenty records
         cats = Tags.objects.distinct().values_list('category', flat=True)

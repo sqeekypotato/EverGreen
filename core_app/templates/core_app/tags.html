@@ -12,6 +12,7 @@
 
 <div>
 <form action="" method="post" id="transTags">
+    {% csrf_token %}
     <table width="100%">
         <th> Date </th> <th> Description </th><th>Income</th><th>Debit</th><th>Category</th><th>Tag</th>
     {% for item in tableList %}

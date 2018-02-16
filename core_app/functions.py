@@ -22,3 +22,20 @@ def convertToInt(numString):
         return x
     except:
         return 0
+
+# returns a dict that has the format dict['recordNumber']['tag'] = tagValue
+def buildTagDict(resultsDict):
+    returnDict = {}
+    for transKey, value in resultsDict.items():
+        if value:
+            if transKey != 'csrfmiddlewaretoken':
+                temp = transKey.split("_")
+                type = temp[0]
+                record = str(temp[1])
+                if record not in returnDict.keys():
+                    returnDict[record] = {}
+                    returnDict[record][type] = value
+                else:
+                    returnDict[record][type] = value
+
+    return returnDict
