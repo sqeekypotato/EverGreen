@@ -21,6 +21,7 @@ $(document).ready(function() {
             success: function(results){
                var tag_list = results['tags'];
                console.log('#tag_option'+text);
+               $('#tag_option'+text).empty();
                 var i;
                 for (i = 0; i < tag_list.length; ++i) {
                     $('#tag_option'+text).append("<option value='" + tag_list[i] + "'>");
