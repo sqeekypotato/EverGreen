@@ -47,9 +47,8 @@ urlpatterns = [
     url(r'^logout/$', auth_views.logout, {'template_name': 'core_app/logout.html'}, name='logout'),
     # contact form
     url(r'^contact/$', views.contact, name='contact'),
-
-
-
+    # income chart
+    url(r'^income_chart/$', views.income_chart, name='income_chart'),
 
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),

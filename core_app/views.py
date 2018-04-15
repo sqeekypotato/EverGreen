@@ -7,13 +7,14 @@ from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.core.mail import EmailMessage
 from django.views.generic import View
+from django_pandas.io import read_frame
 
 import pandas as pd
 import calendar
 
-from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm
+from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm, YearForm
 from core_app.models import BankAccounts, Transaction
-from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict
+from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepareTables
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -30,8 +31,25 @@ def home(request):
 def main_page(request):
     if request.user.is_authenticated:
         template = loader.get_template('core_app/main.html')
-        context = {
+        myTransactions = Transaction.objects.filter(user=request.user).all()
+        df = read_frame(myTransactions)
+        df = prepareDataFrame(df)
+        creditList, debitList, balanceList, labelList, tagvar, catListNum, catListLabel = prepareTables(df, 'year')
 
+        years = Transaction.objects.values_list('year', flat=True).filter(user=request.user).distinct()
+        year_list = []
+        for year in years:
+            year_list.append((year, year)) #have to pass a tuple to the select form for choices
+        yearForm = YearForm(years=year_list)
+
+        context = {
+            'yearForm':yearForm,
+            'credit': creditList,
+            'debit': debitList,
+            'labels': labelList,
+            'balance': balanceList,
+            'categoryNum': catListNum,
+            'catListLabel': catListLabel
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -202,8 +220,12 @@ def get_tag(request):
 
         return JsonResponse(result)
 
+# ________________ Ajax request _______________________________
 
-# ______________________________________________________________
+def income_chart(request):
+    pass
+
+# __________________Generic Pages______________________________
 def signup(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)

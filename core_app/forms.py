@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 
+from .models import Transaction
+
 class ContactForm(forms.Form):
     contact_name = forms.CharField(required=True)
     contact_email = forms.EmailField(required=True)
@@ -45,6 +47,12 @@ class AccountSelectForm(forms.Form):
             self.fields['credit'].choices = custom_choices
             self.fields['description'].choices = custom_choices
 
+class YearForm(forms.Form):
+    years = forms.ChoiceField(choices=[])
 
+    def __init__(self, *args, **kwargs):
+        years = kwargs.pop('years')
+        super(YearForm, self).__init__(*args, **kwargs)
+        self.fields['years'].choices = years
 
 
