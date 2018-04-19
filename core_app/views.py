@@ -31,25 +31,15 @@ def home(request):
 def main_page(request):
     if request.user.is_authenticated:
         template = loader.get_template('core_app/main.html')
-        myTransactions = Transaction.objects.filter(user=request.user).all()
-        df = read_frame(myTransactions)
-        df = prepareDataFrame(df)
-        creditList, debitList, balanceList, labelList, tagvar, catListNum, catListLabel = prepareTables(df, 'year')
 
         years = Transaction.objects.values_list('year', flat=True).filter(user=request.user).distinct()
-        year_list = []
+        year_list = [('All', ('All'))]
         for year in years:
             year_list.append((year, year)) #have to pass a tuple to the select form for choices
         yearForm = YearForm(years=year_list)
 
         context = {
             'yearForm':yearForm,
-            'credit': creditList,
-            'debit': debitList,
-            'labels': labelList,
-            'balance': balanceList,
-            'categoryNum': catListNum,
-            'catListLabel': catListLabel
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -222,8 +212,29 @@ def get_tag(request):
 
 # ________________ Ajax request _______________________________
 
-def income_chart(request):
-    pass
+def transaction_processing(myTransactions, my_interval):
+    df = read_frame(myTransactions)
+    df = prepareDataFrame(df)
+    creditList, debitList, balanceList, labelList = prepareTables(df, my_interval)
+    result = {'creditList': creditList, 'debitList': debitList, 'balanceList': balanceList, 'labelList': labelList,
+              }
+    return result
+
+def first_chart(request):
+    myTransactions = Transaction.objects.filter(user=request.user).all()
+    result = transaction_processing(myTransactions, 'year')
+    return JsonResponse(result)
+
+def new_chart_data(request):
+   if request._post['name'] == 'years':
+       if request._post['value'] == 'All':
+           myTransactions = Transaction.objects.filter(user=request.user).all()
+           result = transaction_processing(myTransactions, 'year')
+           return JsonResponse(result)
+       else:
+           myTransactions = Transaction.objects.filter(user=request.user, year=request._post['value']).all()
+           result = transaction_processing(myTransactions, 'monthName')
+           return JsonResponse(result)
 
 # __________________Generic Pages______________________________
 def signup(request):

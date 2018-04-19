@@ -56,33 +56,34 @@ def prepareDataFrame(dataframe):
     return dataframe
 
 # changes data type from numpy.int64 to float so it can be displayed in json
-# def fixList(list):
-#     import numpy as np
-#     result = []
-#     for i in list:
-#         result.append(i.item())
-#     return result
+def fixList(list):
+    import numpy as np
+    result = []
+    for i in list:
+        result.append(i.decode("utf-8"))
+    return result
 
-# take an interval and returns the relevent dataframe
+# take an interval and returns the relevant dataframe
 def prepareTables(df, interval):
+    df = df.sort_values('date')
     cdvar = df.groupby([interval])['credit', 'debit'].sum()
     balvar = df.groupby([interval])['balance'].median()
     labelsvar = cdvar.index.values.tolist()
-    categoryvar = df.groupby(['category'])['credit', 'debit'].sum()
-    tagvar = df.groupby(['tag'])['credit', 'debit'].sum()
+    # categoryvar = df.groupby(['category'])['credit', 'debit'].sum()
+    # tagvar = df.groupby(['tag'])['credit', 'debit'].sum()
 
-    if interval == "MonthName":
-        labelsvar = [i.encode('UTF8') for i in labelsvar]
+    if interval == "monthName":
+        labelsvar = [str(i) for i in labelsvar]
     else:
         labelsvar = [int(i) for i in labelsvar]
 
-    creditList = cdvar['credit'].tolist()
-    debitList = cdvar['debit'].tolist()
-    balanceList = balvar.tolist()
+    creditList = cdvar['credit'].values.tolist()
+    debitList = cdvar['debit'].values.tolist()
+    balanceList = balvar.values.tolist()
     labelList = labelsvar
-    catListNum = categoryvar['debit'].tolist()
-    catListNum = [i * -1 for i in catListNum]
-    catListLabel = categoryvar.index.values.tolist()
-    catListLabel = [i.encode('UTF8') for i in catListLabel]
+    # catListNum = categoryvar['debit'].tolist()
+    # catListNum = [i * -1 for i in catListNum]
+    # catListLabel = categoryvar.index.values.tolist()
+    # catListLabel = [i.encode('UTF8') for i in catListLabel]
 
-    return creditList, debitList, balanceList, labelList, tagvar, catListNum, catListLabel
+    return creditList, debitList, balanceList, labelList

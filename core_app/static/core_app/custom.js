@@ -1,4 +1,6 @@
 $(document).ready(function() {
+
+
   console.log("ready to go!");
 
     $("form :input").change(function() {
@@ -30,5 +32,10 @@ $(document).ready(function() {
         });
 
         });
+
+
+
+
+
 
 });

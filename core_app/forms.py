@@ -49,10 +49,13 @@ class AccountSelectForm(forms.Form):
 
 class YearForm(forms.Form):
     years = forms.ChoiceField(choices=[])
+    # monthName = forms.ChoiceField(choices=[])
 
     def __init__(self, *args, **kwargs):
         years = kwargs.pop('years')
+        # monthName = kwargs.pop('monthName')
         super(YearForm, self).__init__(*args, **kwargs)
         self.fields['years'].choices = years
+        # self.fields['monthName'].choices = monthName
 
 

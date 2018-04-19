@@ -1,6 +1,9 @@
 
 {% extends "core_app/layout.html" %}
 {% block content %}
+{% load staticfiles%}
+<script src="{% static 'core_app/my_charts.js' %}"></script>
+
 <p> logged in!</p>
 
 
@@ -12,34 +15,8 @@
                 <div class="row">
                     <div class="col-sm-12">
 
-                    <canvas id="incomeChart" width="300" height="300"></canvas>
-        <script>
-
-        var ctx = document.getElementById("incomeChart");
-        balanceChart = new Chart.Line(ctx, {
-      data:{
-      labels: {{ labels }},
-      datasets: [
-
-          {
-              label: "Debits",
-              backgroundColor: "rgba(153,255,51,0.6)",
-              data: {{ debit }}
-          },
-          {
-              label: "Credits",
-              backgroundColor: "rgba(255,153,0,0.6)",
-              data: {{ credit }}
-          },
-          {
-              label: "Balance",
-              backgroundColor: "rgba(0,153,255,0.8)",
-              data: {{ balance }}
-          }
-        ]
-        }
-        });
-        </script>
+                        <div class="chart_container">
+                        <canvas id="balanceChart"></canvas>
 
                     </div>
                 </div>

@@ -48,8 +48,8 @@ urlpatterns = [
     # contact form
     url(r'^contact/$', views.contact, name='contact'),
     # income chart
-    url(r'^income_chart/$', views.income_chart, name='income_chart'),
-
+    url(r'^new_chart_data/$', views.new_chart_data, name='new_chart_data'),
+    url(r'^first_charts/$', views.first_chart, name='first_charts'),
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
     # # # password_change
