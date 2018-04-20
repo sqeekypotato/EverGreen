@@ -55,7 +55,6 @@ class YearForm(forms.Form):
         super(YearForm, self).__init__(*args, **kwargs)
         self.fields['years'].choices = years
 
-
 class MonthForm(forms.Form):
     monthNum = forms.ChoiceField(choices=[])
 
@@ -63,3 +62,12 @@ class MonthForm(forms.Form):
         monthNum = kwargs.pop('monthNum')
         super(MonthForm, self).__init__(*args, **kwargs)
         self.fields['monthNum'].choices = monthNum
+
+class UploadToExistingAccount(forms.Form):
+    file = forms.FileField()
+    accountNames = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, **kwargs):
+        accountNames = kwargs.pop('accountNames')
+        super(UploadToExistingAccount, self).__init__(*args, **kwargs)
+        self.fields['accountNames'].choices = accountNames

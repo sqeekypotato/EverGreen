@@ -1,6 +1,9 @@
-from pandas import read_csv
 from io import StringIO
 import pandas as pd
+
+import calendar
+
+from .models import Transaction, Tags
 
 # takes the file, fixes it and returns a dataframe
 def fixQuotesForCSV(file):
@@ -11,7 +14,7 @@ def fixQuotesForCSV(file):
         line = line.replace(r'" ', r"' ")
         tempdata.write(line)
     finaldata = StringIO(tempdata.getvalue())
-    df = read_csv(finaldata, header=None, sep=',', quotechar='"')
+    df = pd.read_csv(finaldata, header=None, sep=',', quotechar='"')
     return df.to_json()
 
 # converts a float to an int
@@ -23,6 +26,42 @@ def convertToInt(numString):
         return x
     except:
         return 0
+
+# adds dataframe to the account
+def add_df_to_account(dataframe, request, userAccount, dateLocation, creditLocation, debitLocation, descripLocation):
+
+    dataframe[dateLocation] = pd.to_datetime(dataframe[dateLocation])  # changes string to date format
+    dataframe = dataframe.fillna(0)  # replaces NaN with 0
+    records_added = 0
+    for index, row in dataframe.iterrows():
+        credit = row[creditLocation]
+        debit = row[debitLocation]
+        credit = convertToInt(credit)
+        debit = convertToInt(debit)
+        monthNum = row[dateLocation].month
+        year = row[dateLocation].year
+        monthName = calendar.month_abbr[monthNum]
+        if debit < 0:
+            debit = debit * -1
+        balance = userAccount.balance + credit - debit
+        date = row[dateLocation].to_pydatetime().date()
+        description = row[descripLocation]
+        trans = Transaction(
+            user=request.user,
+            account=userAccount,
+            balance=balance,
+            date=date,
+            description=description,
+            credit=credit,
+            debit=debit,
+            monthNum=monthNum,
+            monthName=monthName,
+            year=year
+        )
+        trans.save()  # adds record to the database
+        records_added += 1
+
+    return records_added
 
 # returns a dict that has the format dict['recordNumber']['tag'] = tagValue
 def buildTagDict(resultsDict):
@@ -63,30 +102,7 @@ def fixList(list):
         result.append(i.decode("utf-8"))
     return result
 
-# take an interval and returns the relevant dataframe
-def prepareTables(df, interval):
-    cdvar = df.groupby([interval])['credit', 'debit'].sum()
-    balvar = df.groupby([interval])['balance'].median()
-    labelsvar = cdvar.index.values.tolist()
-    # categoryvar = df.groupby(['category'])['credit', 'debit'].sum()
-    # tagvar = df.groupby(['tag'])['credit', 'debit'].sum()
-
-    if interval == "monthNum":
-        labelsvar = [str(i) for i in labelsvar]
-    else:
-        labelsvar = [int(i) for i in labelsvar]
-
-    creditList = cdvar['credit'].values.tolist()
-    debitList = cdvar['debit'].values.tolist()
-    balanceList = balvar.values.tolist()
-    labelList = labelsvar
-    # catListNum = categoryvar['debit'].tolist()
-    # catListNum = [i * -1 for i in catListNum]
-    # catListLabel = categoryvar.index.values.tolist()
-    # catListLabel = [i.encode('UTF8') for i in catListLabel]
-
-    return creditList, debitList, balanceList, labelList
-
+# takes a dataframe and returns multiple dicts that can be converted to json
 def prepare_table(df, interval):
     # general income chart
     credit_vals = df.groupby([interval])['credit'].sum()
@@ -101,6 +117,7 @@ def prepare_table(df, interval):
     cat_dict = {}
     for category in cat_list:
         result = df.loc[df['category'] == category, 'debit'].sum()
+        result = result * -1
         cat_dict[category] = result
     cat_labels = [str(x) for x in cat_list]
 
@@ -114,3 +131,27 @@ def prepare_table(df, interval):
               }
 
     return new_df
+
+# checks other records in the database and tags them
+def check_other_records(**kwargs):
+    print('new thread!')
+    other_records = Transaction.objects.filter(description=kwargs['description'], category=None).all()
+    print('{} records found to append category to'.format(len(other_records)))
+    for record in other_records:
+        print(record.id)
+        record.category = kwargs['category']
+        record.tag = kwargs['tag']
+        record.save()
+        print('{} id saved with cat {}'.format(record.id, record.category))
+
+# checks if cat and tag are in database (as a pair) and if not, adds them
+def add_tags_to_database(cat, tag, user):
+    add_tag = True
+    other_tags = Tags.objects.filter(category=cat).all()
+    print('{} records found with {} category'.format(len(other_tags), cat))
+    for record in other_tags:
+        if record.tag == tag:
+            add_tag = False
+    if add_tag:
+        new_tag = Tags(category=cat, tag=tag, user=user)
+        new_tag.save()

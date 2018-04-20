@@ -35,6 +35,8 @@ urlpatterns = [
     # url(r'^redirect_details/$', views.redirect_details, name='redirect_details'),
     # account_details
     url(r'^account_details/$', views.account_details, name='account_details'),
+    # file_upload
+    url(r'^upload_transactions/$', views.upload_transactions, name='upload_transactions'),
     # tags
     url(r'^tags/$', views.tags, name='tags'),
     # get_tags

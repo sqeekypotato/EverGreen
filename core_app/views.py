@@ -10,11 +10,12 @@ from django.views.generic import View
 from django_pandas.io import read_frame
 
 import pandas as pd
-import calendar
+import threading
 
-from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm, YearForm, MonthForm
+from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm
 from core_app.models import BankAccounts, Transaction
-from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table
+from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
+    check_other_records, add_tags_to_database, add_df_to_account
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -95,40 +96,13 @@ def account_details(request):
                 userAccount.transDebitCol = int(request.POST['debit'])
                 userAccount.transDescriptionCol = request.POST['description']
                 userAccount.save()
-
-                # adds transactions to account
-                dataframe[int(request.POST['date'])] = pd.to_datetime(dataframe[int(request.POST['date'])]) #changes string to date format
-                dataframe = dataframe.fillna(0) #replaces NaN with 0
-                records_added = 0
-                for index, row in dataframe.iterrows():
-                    credit = row[int(request.POST['credit'])]
-                    debit = row[int(request.POST['debit'])]
-                    credit = convertToInt(credit)
-                    debit = convertToInt(debit)
-                    monthNum = row[int(request.POST['date'])].month
-                    year = row[int(request.POST['date'])].year
-                    monthName = calendar.month_abbr[monthNum]
-                    if debit < 0:
-                        debit = debit * -1
-                    balance = userAccount.balance + credit - debit
-                    date = row[int(request.POST['date'])].to_pydatetime().date()
-                    description = row[int(request.POST['description'])]
-                    trans = Transaction(
-                                        user=request.user,
-                                        account=userAccount,
-                                        balance=balance,
-                                        date=date,
-                                        description =description ,
-                                        credit= credit,
-                                        debit = debit,
-                                        monthNum = monthNum,
-                                        monthName = monthName,
-                                        year = year
-                                        )
-                    trans.save() #adds record to the database
-                    records_added += 1
+                credit = int(request.POST['credit'])
+                debit = int(request.POST['debit'])
+                my_date = int(request.POST['date'])
+                description = int(request.POST['description'])
 
 
+                records_added = add_df_to_account(dataframe, request, userAccount, my_date, credit, debit, description)
 
                 message = '{} records added to the database.  We are working on processing them now'.format(records_added)
 
@@ -151,6 +125,43 @@ def account_details(request):
     else:
         return redirect('home')
 
+def upload_transactions(request):
+    if request.user.is_authenticated:
+        if request.method == 'POST':
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                userAccount = request._post['accountNames']
+                df = fixQuotesForCSV(request.FILES['file'])
+                dataframe = pd.read_json(df)
+                dataframe = dataframe.reset_index(drop=True)
+                account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first()
+
+                records_added = add_df_to_account(dataframe, request, account, account.transDateCol,
+                                                  account.transCreditCol, account.transDebitCol, account.transDescriptionCol)
+                message = '{} records added to the database.  We are working on processing them now'.format(
+                    records_added)
+
+                template = loader.get_template('core_app/index.html')
+                context = {
+                    'user': request.user,
+                    'message': message
+                }
+                return HttpResponse(template.render(context, request))
+
+        template = loader.get_template('core_app/upload_transactions.html')
+        accounts = BankAccounts.objects.values_list('account_name', flat=True).filter(user=request.user).distinct()
+        account_list = []
+        for account in accounts:
+            account_list.append((account, account))  # have to pass a tuple to the select form for choices
+        form = UploadToExistingAccount(accountNames=account_list)
+        context = {
+            'form': form,
+        }
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
+
+
 def tags(request):
     if request.user.is_authenticated:
         if request.method == "POST":
@@ -158,6 +169,7 @@ def tags(request):
             tagDict = buildTagDict(form_dict)
 
             for transNum, values in tagDict.items():
+                print('new loop in tags')
                 temp_record = Transaction.objects.get(id=transNum)
                 temp_record.tag = values['tag']
                 temp_record.category = values['cat']
@@ -166,7 +178,13 @@ def tags(request):
                 temp_record.monthName = temp_record.date.strftime("%b")
                 temp_record.save()
 
-                return redirect('tags')
+                t = threading.Thread(target=check_other_records, kwargs={'description': temp_record.description,
+                                                                         'category':temp_record.category,
+                                                                         'tag':temp_record.tag})
+                t.start()
+
+                add_tags_to_database(temp_record.category, temp_record.tag, request.user)
+            return redirect('tags')
 
 
         trans = Transaction.objects.all().filter(user=request.user, tag=None)[:20] #gets twenty records
@@ -187,7 +205,6 @@ def tags(request):
             'tableList' : tableList,
             'category' : cats1
         }
-        print(cats1)
         return HttpResponse(template.render(context, request))
     else:
         message = 'Please login first!'
@@ -220,14 +237,14 @@ def get_tag(request):
 
 # ________________ Ajax request _______________________________
 
-
 def get_months(request):
-    request_year = request._post['year']
-    months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct()
-    month_list = ['All']
-    for month in months:
-        month_list.append(month)
-    return JsonResponse(month_list, safe=False)
+    if request.user.is_authenticated:
+        request_year = request._post['year']
+        months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct()
+        month_list = ['All']
+        for month in months:
+            month_list.append(month)
+        return JsonResponse(month_list, safe=False)
 
 def transaction_processing(myTransactions, my_interval):
     df = read_frame(myTransactions)
@@ -236,32 +253,33 @@ def transaction_processing(myTransactions, my_interval):
     return result
 
 def first_chart(request):
-    myTransactions = Transaction.objects.filter(user=request.user).all()
-    result = transaction_processing(myTransactions, 'year')
-    return JsonResponse(result, safe=False)
+    if request.user.is_authenticated:
+        myTransactions = Transaction.objects.filter(user=request.user).all()
+        result = transaction_processing(myTransactions, 'year')
+        return JsonResponse(result, safe=False)
 
 def new_chart_data(request):
-   if request._post['name'] == 'years':
-       if request._post['value'] == 'All':
-           myTransactions = Transaction.objects.filter(user=request.user).all()
-           result = transaction_processing(myTransactions, 'year')
-           return JsonResponse(result)
-       else:
-           request.session['year'] = request._post['value']
-           myTransactions = Transaction.objects.filter(user=request.user, year=request._post['value']).all()
-           result = transaction_processing(myTransactions, 'monthNum')
-           return JsonResponse(result)
+    if request.user.is_authenticated:
+       if request._post['name'] == 'years':
+           if request._post['value'] == 'All':
+               myTransactions = Transaction.objects.filter(user=request.user).all()
+               result = transaction_processing(myTransactions, 'year')
+               return JsonResponse(result)
+           else:
+               request.session['year'] = request._post['value']
+               myTransactions = Transaction.objects.filter(user=request.user, year=request._post['value']).all()
+               result = transaction_processing(myTransactions, 'monthNum')
+               return JsonResponse(result)
 
-   if request._post['name'] == 'monthNum':
-       if request._post['value'] == 'All':
-           myTransactions = Transaction.objects.filter(user=request.user, year=request.session['year']).all()
-           result = transaction_processing(myTransactions, 'monthNum')
-           return JsonResponse(result)
-       else:
-           myTransactions = Transaction.objects.filter(user=request.user, monthNum=request._post['value'], year=request.session['year']).all()
-           result = transaction_processing(myTransactions, 'day')
-           return JsonResponse(result)
-
+       if request._post['name'] == 'monthNum':
+           if request._post['value'] == 'All':
+               myTransactions = Transaction.objects.filter(user=request.user, year=request.session['year']).all()
+               result = transaction_processing(myTransactions, 'monthNum')
+               return JsonResponse(result)
+           else:
+               myTransactions = Transaction.objects.filter(user=request.user, monthNum=request._post['value'], year=request.session['year']).all()
+               result = transaction_processing(myTransactions, 'day')
+               return JsonResponse(result)
 
 # __________________Generic Pages______________________________
 def signup(request):

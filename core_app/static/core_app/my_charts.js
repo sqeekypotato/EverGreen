@@ -31,6 +31,7 @@ $(document).ready(function() {
             success: function(results){
                console.log('success!')
                chartBalance(results, 0);
+               chartCat(results, 0);
                if(value=="All"){
                 $("#month_form").hide();}else {
                     $("#month_form").show();
@@ -57,6 +58,7 @@ $(document).ready(function() {
             success: function(results){
                console.log('success!')
                chartBalance(results, 0);
+               chartCat(results, 0);
             }
         });
     });
@@ -106,7 +108,7 @@ $(document).ready(function() {
       if (first == 0){
        categoryChart.destroy();
       }
-      balanceChart = new Chart(ctx2, {
+      categoryChart = new Chart(ctx2, {
       type: 'doughnut',
       data:{
       labels: results['cat_labels'],
