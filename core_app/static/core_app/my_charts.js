@@ -4,11 +4,12 @@ $(document).ready(function() {
   var balanceChart;
   var categoryChart;
   var ctx = document.getElementById('balanceChart').getContext('2d');
-//  var ctx2 = document.getElementById('categoryChart').getContext('2d');
+  var ctx2 = document.getElementById('categoryChart').getContext('2d');
   var getdata = $.post('/first_charts/');
 
   getdata.done(function(results){
     chartBalance(results, 1);
+    chartCat(results, 1)
     $("#month_form").hide();
 
 });
@@ -64,7 +65,7 @@ $(document).ready(function() {
 //
 //
     function chartBalance(results, first){
-        console.log('first chart!')
+        console.log('balance chart!')
       if (first == 0){
        balanceChart.destroy();
     //       categoryChart.destroy();
@@ -88,6 +89,32 @@ $(document).ready(function() {
               label: "Balance",
               backgroundColor: "rgba(0,153,255,0.8)",
               data: results['balance']
+          }
+      ]
+      }
+    });
+}
+
+    function chartCat(results, first){
+        console.log('category chart!')
+        var myValues = $.map(results['cat_vals'], function(value, key) { return value });
+        console.log(myValues)
+        var colours = []
+        for (var i = 0; i < myValues.length; i++) {
+            colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
+        }
+      if (first == 0){
+       categoryChart.destroy();
+      }
+      balanceChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data:{
+      labels: results['cat_labels'],
+      datasets: [
+
+          {
+              backgroundColor: colours,
+              data: myValues
           }
       ]
       }

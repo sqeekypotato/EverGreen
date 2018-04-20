@@ -219,6 +219,8 @@ def get_tag(request):
         return JsonResponse(result)
 
 # ________________ Ajax request _______________________________
+
+
 def get_months(request):
     request_year = request._post['year']
     months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct()

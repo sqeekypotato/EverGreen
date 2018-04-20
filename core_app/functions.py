@@ -88,17 +88,29 @@ def prepareTables(df, interval):
     return creditList, debitList, balanceList, labelList
 
 def prepare_table(df, interval):
+    # general income chart
     credit_vals = df.groupby([interval])['credit'].sum()
     debit_vals = df.groupby([interval])['debit'].sum()
     monthName = df.groupby([interval])['monthName'].unique().astype(str)
     balance_vals = df.groupby([interval])['balance'].median()
     labels = credit_vals.index.tolist()
-    labels = [str(x)  for x in labels]
+    labels = [str(x) for x in labels]
+
+    # category chart
+    cat_list = df.category.unique()
+    cat_dict = {}
+    for category in cat_list:
+        result = df.loc[df['category'] == category, 'debit'].sum()
+        cat_dict[category] = result
+    cat_labels = [str(x) for x in cat_list]
+
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
               'monthName':monthName.tolist(),
               'balance':balance_vals.tolist(),
-              'labels':labels
+              'labels':labels,
+              'cat_labels':cat_labels,
+              'cat_vals':cat_dict
               }
 
     return new_df
