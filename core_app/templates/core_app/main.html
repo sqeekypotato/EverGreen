@@ -28,5 +28,9 @@
 
     {% csrf_token %}
     {{ yearForm.as_p }}
+    <div id="month_form">{% csrf_token %}{{ monthForm.as_p }}</div>
+
 
 {% endblock %}
+
+</div>

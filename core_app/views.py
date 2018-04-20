@@ -12,9 +12,9 @@ from django_pandas.io import read_frame
 import pandas as pd
 import calendar
 
-from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm, YearForm
+from core_app.forms import ContactForm, UserForm, UploadFileForm, AccountSelectForm, YearForm, MonthForm
 from core_app.models import BankAccounts, Transaction
-from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepareTables
+from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -33,13 +33,21 @@ def main_page(request):
         template = loader.get_template('core_app/main.html')
 
         years = Transaction.objects.values_list('year', flat=True).filter(user=request.user).distinct()
-        year_list = [('All', ('All'))]
+        year_list = [('All', 'All')]
         for year in years:
             year_list.append((year, year)) #have to pass a tuple to the select form for choices
+
+        months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user).distinct()
+        month_list = [('All', 'All')]
+        for month in months:
+            month_list.append((month, month))
+
         yearForm = YearForm(years=year_list)
+        monthForm = MonthForm(monthNum=month_list)
 
         context = {
             'yearForm':yearForm,
+            'monthForm':monthForm
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -211,19 +219,24 @@ def get_tag(request):
         return JsonResponse(result)
 
 # ________________ Ajax request _______________________________
+def get_months(request):
+    request_year = request._post['year']
+    months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct()
+    month_list = ['All']
+    for month in months:
+        month_list.append(month)
+    return JsonResponse(month_list, safe=False)
 
 def transaction_processing(myTransactions, my_interval):
     df = read_frame(myTransactions)
     df = prepareDataFrame(df)
-    creditList, debitList, balanceList, labelList = prepareTables(df, my_interval)
-    result = {'creditList': creditList, 'debitList': debitList, 'balanceList': balanceList, 'labelList': labelList,
-              }
+    result = prepare_table(df, my_interval)
     return result
 
 def first_chart(request):
     myTransactions = Transaction.objects.filter(user=request.user).all()
     result = transaction_processing(myTransactions, 'year')
-    return JsonResponse(result)
+    return JsonResponse(result, safe=False)
 
 def new_chart_data(request):
    if request._post['name'] == 'years':
@@ -232,9 +245,21 @@ def new_chart_data(request):
            result = transaction_processing(myTransactions, 'year')
            return JsonResponse(result)
        else:
+           request.session['year'] = request._post['value']
            myTransactions = Transaction.objects.filter(user=request.user, year=request._post['value']).all()
-           result = transaction_processing(myTransactions, 'monthName')
+           result = transaction_processing(myTransactions, 'monthNum')
            return JsonResponse(result)
+
+   if request._post['name'] == 'monthNum':
+       if request._post['value'] == 'All':
+           myTransactions = Transaction.objects.filter(user=request.user, year=request.session['year']).all()
+           result = transaction_processing(myTransactions, 'monthNum')
+           return JsonResponse(result)
+       else:
+           myTransactions = Transaction.objects.filter(user=request.user, monthNum=request._post['value'], year=request.session['year']).all()
+           result = transaction_processing(myTransactions, 'day')
+           return JsonResponse(result)
+
 
 # __________________Generic Pages______________________________
 def signup(request):

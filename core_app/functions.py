@@ -65,14 +65,13 @@ def fixList(list):
 
 # take an interval and returns the relevant dataframe
 def prepareTables(df, interval):
-    df = df.sort_values('date')
     cdvar = df.groupby([interval])['credit', 'debit'].sum()
     balvar = df.groupby([interval])['balance'].median()
     labelsvar = cdvar.index.values.tolist()
     # categoryvar = df.groupby(['category'])['credit', 'debit'].sum()
     # tagvar = df.groupby(['tag'])['credit', 'debit'].sum()
 
-    if interval == "monthName":
+    if interval == "monthNum":
         labelsvar = [str(i) for i in labelsvar]
     else:
         labelsvar = [int(i) for i in labelsvar]
@@ -87,3 +86,19 @@ def prepareTables(df, interval):
     # catListLabel = [i.encode('UTF8') for i in catListLabel]
 
     return creditList, debitList, balanceList, labelList
+
+def prepare_table(df, interval):
+    credit_vals = df.groupby([interval])['credit'].sum()
+    debit_vals = df.groupby([interval])['debit'].sum()
+    monthName = df.groupby([interval])['monthName'].unique().astype(str)
+    balance_vals = df.groupby([interval])['balance'].median()
+    labels = credit_vals.index.tolist()
+    labels = [str(x)  for x in labels]
+    new_df = {'credits':credit_vals.tolist(),
+              'debits':debit_vals.tolist(),
+              'monthName':monthName.tolist(),
+              'balance':balance_vals.tolist(),
+              'labels':labels
+              }
+
+    return new_df
