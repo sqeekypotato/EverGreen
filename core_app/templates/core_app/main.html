@@ -26,9 +26,10 @@
 
                         <div class="chart_container">
                         <canvas id="categoryChart"></canvas>
-
+                        {% csrf_token %}
+                        {{ catForm.as_p }}
                     </div>
-                <div class="row">
+                <div class="row" id="tagContainer">
                     <div class="col-sm-12">
 
                         <div class="chart_container">

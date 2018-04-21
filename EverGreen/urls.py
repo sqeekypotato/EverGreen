@@ -24,7 +24,6 @@ from core_app import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-
     # \
     url(r'^$', views.home, name='home'),
     # \main
@@ -50,11 +49,10 @@ urlpatterns = [
     # contact form
     url(r'^contact/$', views.contact, name='contact'),
     # api
-
     url(r'^new_chart_data/$', views.new_chart_data, name='new_chart_data'),
     url(r'^first_charts/$', views.first_chart, name='first_charts'),
     url(r'^get_months/$', views.get_months, name='get_months'),
-
+    url(r'^new_tag_data/$', views.new_tag_data, name='new_tag_data'),
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
     # # # password_change

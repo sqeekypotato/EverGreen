@@ -9,11 +9,12 @@ $(document).ready(function() {
   var ctx3 = document.getElementById('tagChart').getContext('2d');
   var getdata = $.post('/first_charts/');
 
-  getdata.done(function(results){
+    getdata.done(function(results){
     chartBalance(results, 1);
     chartCat(results, 1);
     chartTag(results, 1);
     $("#month_form").hide();
+    $("#tagContainer").hide();
 
 });
 
@@ -63,6 +64,30 @@ $(document).ready(function() {
                console.log('success!')
                chartBalance(results, 0);
                chartCat(results, 0);
+               chartTag(results, 0);
+            }
+        });
+    });
+
+    $("#id_categories").change(function() {
+        console.log("Change!");
+
+        formName = $(this).attr('name');
+        value = $(this).val();
+        if(value == 'All'){
+            $("#tagContainer").hide();
+        }
+        $.ajax({
+            type: "POST",
+            url: "/new_tag_data/",
+            data: {'name': formName,
+                    'value':value
+                    },
+            dataType: 'json',
+
+            success: function(results){
+               console.log('success!')
+               $("#tagContainer").show();
                chartTag(results, 0);
             }
         });
@@ -123,7 +148,7 @@ $(document).ready(function() {
     });
 }
 
-function chartTag(results, first){
+    function chartTag(results, first){
         console.log('tag chart!')
         var myValues1 = $.map(results['tag_vals'], function(value, key) { return value });
         console.log(myValues1)

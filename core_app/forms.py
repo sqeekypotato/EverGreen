@@ -71,3 +71,11 @@ class UploadToExistingAccount(forms.Form):
         accountNames = kwargs.pop('accountNames')
         super(UploadToExistingAccount, self).__init__(*args, **kwargs)
         self.fields['accountNames'].choices = accountNames
+
+class CategorySelection(forms.Form):
+    categories = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, **kwargs):
+        categories = kwargs.pop('categories')
+        super(CategorySelection, self).__init__(*args, **kwargs)
+        self.fields['categories'].choices = categories

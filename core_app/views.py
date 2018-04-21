@@ -12,7 +12,8 @@ from django_pandas.io import read_frame
 import pandas as pd
 import threading
 
-from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm
+from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm,\
+    CategorySelection
 from core_app.models import BankAccounts, Transaction
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account
@@ -43,12 +44,19 @@ def main_page(request):
         for month in months:
             month_list.append((month, month))
 
+        categories = Tags.objects.values_list('category', flat=True).filter(user=request.user).distinct()
+        cat_list = [('All', 'All')]
+        for cat in categories:
+            cat_list.append((cat, cat))
+
         yearForm = YearForm(years=year_list)
         monthForm = MonthForm(monthNum=month_list)
+        catForm = CategorySelection(categories=cat_list)
 
         context = {
             'yearForm':yearForm,
-            'monthForm':monthForm
+            'monthForm':monthForm,
+            'catForm':catForm,
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -257,6 +265,7 @@ def first_chart(request):
     if request.user.is_authenticated:
         myTransactions = Transaction.objects.filter(user=request.user).all()
         result = transaction_processing(myTransactions, 'year')
+        request.session['year'] = 'All'
         return JsonResponse(result, safe=False)
 
 def new_chart_data(request):
@@ -281,6 +290,28 @@ def new_chart_data(request):
                myTransactions = Transaction.objects.filter(user=request.user, monthNum=request._post['value'], year=request.session['year']).all()
                result = transaction_processing(myTransactions, 'day')
                return JsonResponse(result)
+
+def new_tag_data(request):
+    if request.user.is_authenticated:
+        request_cat = request._post['value']
+        if request.session['year'] == 'All':
+            tags = Transaction.objects.filter(user=request.user, category=request_cat,).all()
+        else:
+            tags = Transaction.objects.filter(user=request.user, category=request_cat, year=request.session['year']).all()
+        df = read_frame(tags)
+        tag_list = df.tag.unique()
+        tag_dict = {}
+        for tag in tag_list:
+            result = df.loc[df['tag'] == tag, 'debit'].sum()
+            result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
+            tag_dict[tag] = result
+        tag_labels = [str(x) for x in tag_list]
+
+        results = {
+            'tag_labels': tag_labels,
+            'tag_vals': tag_dict,
+        }
+        return JsonResponse(results, safe=False)
 
 # __________________Generic Pages______________________________
 def signup(request):
