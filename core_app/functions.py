@@ -34,7 +34,7 @@ def add_df_to_account(dataframe, request, userAccount, dateLocation, creditLocat
     dataframe = dataframe.fillna(0)  # replaces NaN with 0
     records_added = 0
     for index, row in dataframe.iterrows():
-        credit = row[creditLocation]
+        credit = row[creditLocation] # these set choose the proper columns in case of different layouts
         debit = row[debitLocation]
         credit = convertToInt(credit)
         debit = convertToInt(debit)
@@ -117,9 +117,18 @@ def prepare_table(df, interval):
     cat_dict = {}
     for category in cat_list:
         result = df.loc[df['category'] == category, 'debit'].sum()
-        result = result * -1
+        result = result * -1 #this is put in so the chart shows posative values.  It didn't like negative ones
         cat_dict[category] = result
     cat_labels = [str(x) for x in cat_list]
+
+    # tag chart
+    tag_list = df.tag.unique()
+    tag_dict = {}
+    for tag in tag_list:
+        result = df.loc[df['tag'] == tag, 'debit'].sum()
+        result = result*-1 #this is put in so the chart shows posative values.  It didn't like negative ones
+        tag_dict[tag] = result
+    tag_labels = [str(x) for x in tag_list]
 
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
@@ -127,7 +136,9 @@ def prepare_table(df, interval):
               'balance':balance_vals.tolist(),
               'labels':labels,
               'cat_labels':cat_labels,
-              'cat_vals':cat_dict
+              'cat_vals':cat_dict,
+              'tag_labels':tag_labels,
+              'tag_vals':tag_dict,
               }
 
     return new_df

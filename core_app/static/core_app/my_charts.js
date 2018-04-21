@@ -3,13 +3,16 @@ $(document).ready(function() {
 
   var balanceChart;
   var categoryChart;
+  var tagChart;
   var ctx = document.getElementById('balanceChart').getContext('2d');
   var ctx2 = document.getElementById('categoryChart').getContext('2d');
+  var ctx3 = document.getElementById('tagChart').getContext('2d');
   var getdata = $.post('/first_charts/');
 
   getdata.done(function(results){
     chartBalance(results, 1);
-    chartCat(results, 1)
+    chartCat(results, 1);
+    chartTag(results, 1);
     $("#month_form").hide();
 
 });
@@ -32,11 +35,12 @@ $(document).ready(function() {
                console.log('success!')
                chartBalance(results, 0);
                chartCat(results, 0);
+
                if(value=="All"){
                 $("#month_form").hide();}else {
                     $("#month_form").show();
                 }
-
+               chartTag(results, 0);
             }
         });
     });
@@ -59,18 +63,15 @@ $(document).ready(function() {
                console.log('success!')
                chartBalance(results, 0);
                chartCat(results, 0);
+               chartTag(results, 0);
             }
         });
     });
 
-
-//
-//
     function chartBalance(results, first){
         console.log('balance chart!')
       if (first == 0){
        balanceChart.destroy();
-    //       categoryChart.destroy();
       }
       balanceChart = new Chart.Line(ctx, {
       data:{
@@ -100,7 +101,6 @@ $(document).ready(function() {
     function chartCat(results, first){
         console.log('category chart!')
         var myValues = $.map(results['cat_vals'], function(value, key) { return value });
-        console.log(myValues)
         var colours = []
         for (var i = 0; i < myValues.length; i++) {
             colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
@@ -117,6 +117,32 @@ $(document).ready(function() {
           {
               backgroundColor: colours,
               data: myValues
+          }
+      ]
+      }
+    });
+}
+
+function chartTag(results, first){
+        console.log('tag chart!')
+        var myValues1 = $.map(results['tag_vals'], function(value, key) { return value });
+        console.log(myValues1)
+        var colours = []
+        for (var i = 0; i < myValues1.length; i++) {
+            colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
+        }
+      if (first == 0){
+       tagChart.destroy();
+      }
+      tagChart = new Chart(ctx3, {
+      type: 'doughnut',
+      data:{
+      labels: results['tag_labels'],
+      datasets: [
+
+          {
+              backgroundColor: colours,
+              data: myValues1
           }
       ]
       }

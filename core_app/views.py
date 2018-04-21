@@ -67,6 +67,7 @@ def newAccount(request):
     else:
         return redirect('home')
 
+# lets the user choose the layout of the uploaded file and sets the proper columns then adds them to the database
 def account_details(request):
     if request.user.is_authenticated:
         dataframe = request.session.get('df', None)
@@ -125,19 +126,20 @@ def account_details(request):
     else:
         return redirect('home')
 
+# upload transactions to existing account
 def upload_transactions(request):
     if request.user.is_authenticated:
         if request.method == 'POST':
             form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 userAccount = request._post['accountNames']
-                df = fixQuotesForCSV(request.FILES['file'])
+                df = fixQuotesForCSV(request.FILES['file']) #fixes problems with quotes and apostrophes
                 dataframe = pd.read_json(df)
                 dataframe = dataframe.reset_index(drop=True)
-                account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first()
+                account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first() #gets user account named in the request
 
                 records_added = add_df_to_account(dataframe, request, account, account.transDateCol,
-                                                  account.transCreditCol, account.transDebitCol, account.transDescriptionCol)
+                                                  account.transCreditCol, account.transDebitCol, account.transDescriptionCol) # sends the dataframe to have the records added to the database
                 message = '{} records added to the database.  We are working on processing them now'.format(
                     records_added)
 
@@ -160,7 +162,6 @@ def upload_transactions(request):
         return HttpResponse(template.render(context, request))
     else:
         return redirect('home')
-
 
 def tags(request):
     if request.user.is_authenticated:
@@ -235,7 +236,7 @@ def get_tag(request):
 
         return JsonResponse(result)
 
-# ________________ Ajax request _______________________________
+# ________________Chart Ajax request _______________________________
 
 def get_months(request):
     if request.user.is_authenticated:
