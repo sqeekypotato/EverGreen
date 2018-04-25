@@ -190,6 +190,7 @@ $(document).ready(function() {
                 $.each(results, function(key,value) {
                   $el.append($("<option></option>")
                      .attr("value", key).text(value));
+
                 });
             }
         });

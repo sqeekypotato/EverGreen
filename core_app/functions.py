@@ -1,9 +1,8 @@
 from io import StringIO
 import pandas as pd
-
 import calendar
 
-from .models import Transaction, Tags
+from .models import Transaction, Tags, UniversalTags
 
 # takes the file, fixes it and returns a dataframe
 def fixQuotesForCSV(file):
@@ -87,11 +86,10 @@ def prepareDataFrame(dataframe):
     # id, userID, account, balance, date, description, credit, debit, category, tag, MonthNum, MonthName, Year
     dataframe = dataframe.sort_values('date', ascending=True)
     dataframe['day'] = dataframe['date'].dt.day
-    dataframe[['balance', 'credit', 'debit', 'year']] = dataframe[['balance', 'credit', 'debit', 'year']].astype(float)
+    dataframe[['balance', 'credit', 'debit']] = dataframe[['balance', 'credit', 'debit']].astype(float)
     dataframe['credit'] = dataframe['credit'].apply(lambda x: x / 100)
     dataframe['debit'] = dataframe['debit'].apply(lambda x: x/-100)
     dataframe['balance'] = dataframe['balance'].apply(lambda x: x / 100)
-
     return dataframe
 
 # changes data type from numpy.int64 to float so it can be displayed in json
@@ -105,13 +103,19 @@ def fixList(list):
 # takes a dataframe and returns multiple dicts that can be converted to json
 def prepare_table(df, interval):
     # general income chart
+    df.sort_values('date')
     credit_vals = df.groupby([interval])['credit'].sum()
+    credit_vals = credit_vals.round(2)
     debit_vals = df.groupby([interval])['debit'].sum()
+    debit_vals = debit_vals.round(2)
     monthName = df.groupby([interval])['monthName'].unique().astype(str)
-    balance_vals = df.groupby([interval])['balance'].median()
-    labels = credit_vals.index.tolist()
+    balance_vals = df.groupby([interval])['balance'].mean()
+    balance_vals = balance_vals.round(2)
+    labels = debit_vals.index.tolist()
     labels = [str(x) for x in labels]
 
+
+    del df['credit'] #removes credit values so they don't appear in the tag charting
     # category chart
     cat_list = df.category.unique()
     cat_dict = {}
@@ -120,6 +124,7 @@ def prepare_table(df, interval):
         result = result * -1 #this is put in so the chart shows posative values.  It didn't like negative ones
         cat_dict[category] = result
     cat_labels = [str(x) for x in cat_list]
+    cat_labels.sort()
 
     # tag chart
     tag_list = df.tag.unique()
@@ -129,6 +134,7 @@ def prepare_table(df, interval):
         result = result*-1 #this is put in so the chart shows posative values.  It didn't like negative ones
         tag_dict[tag] = result
     tag_labels = [str(x) for x in tag_list]
+    tag_labels.sort()
 
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
@@ -145,15 +151,12 @@ def prepare_table(df, interval):
 
 # checks other records in the database and tags them
 def check_other_records(**kwargs):
-    print('new thread!')
     other_records = Transaction.objects.filter(description=kwargs['description'], category=None).all()
     print('{} records found to append category to'.format(len(other_records)))
     for record in other_records:
-        print(record.id)
         record.category = kwargs['category']
         record.tag = kwargs['tag']
         record.save()
-        print('{} id saved with cat {}'.format(record.id, record.category))
 
 # checks if cat and tag are in database (as a pair) and if not, adds them
 def add_tags_to_database(cat, tag, user):
@@ -166,3 +169,99 @@ def add_tags_to_database(cat, tag, user):
     if add_tag:
         new_tag = Tags(category=cat, tag=tag, user=user)
         new_tag.save()
+
+# adds values to univeral tag database
+def populate_universal_tags():
+    taglist = [
+        ['Tithing', 'Giving']
+        , ['Offerings', 'Giving']
+        , ['Charities', 'Giving']
+        , ['Special Needs', 'Giving']
+        , ['Groceries', 'Food']
+        , ['Restaurants', 'Food']
+        , ['Pet Food', 'Food']
+        , ['Mortgage', 'Housing']
+        , ['Rent', 'Housing']
+        , ['Property Taxes', 'Housing']
+        , ['Household Repairs', 'Housing']
+        , ['HOA Dues', 'Housing']
+        , ['Condo Fees', 'Housing']
+        , ['Insurance', 'Housing']
+        , ['Electricity', 'Utilities']
+        , ['Water', 'Utilities']
+        , ['Heating', 'Utilities']
+        , ['Garbage', 'Utilities']
+        , ['Phones', 'Utilities']
+        , ['Cable', 'Utilities']
+        , ['Internet', 'Utilities']
+        , ["Adults' Clothing", 'Clothing']
+        , ["Children's Clothing", 'Clothing']
+        , ["Fuel", 'Transportation']
+        , ["Tires", 'Transportation']
+        , ["Oil Changes", 'Transportation']
+        , ["Vehicle Maintenance", 'Transportation']
+        , ["Parking Fees", 'Transportation']
+        , ["Repairs", 'Transportation']
+        , ["Licencing Fees", 'Transportation']
+        , ["Vehicle Payments", 'Transportation']
+        , ["Vehicle Insurance", 'Transportation']
+        , ["Transit Fees", 'Transportation']
+        , ["Primary Care", 'Medical']
+        , ["Dental Care", 'Medical']
+        , ["Specialty Care", 'Medical']
+        , ["Medications", 'Medical']
+        , ["Medical Devices", 'Medical']
+        , ["Gym Memberships", 'Personal']
+        , ["Hair Styling", 'Personal']
+        , ["Babysitting", 'Personal']
+        , ["Subscriptions", 'Personal']
+        , ["Cosmetics", 'Personal']
+        , ["Credit Card Fees", 'Financial']
+        , ["Student Loan", 'Financial']
+        , ["Line of Credit", 'Financial']
+        , ["Expenses Reimbursement", 'Financial']
+        , ["Games", 'Entertainment']
+        , ["Cash", 'Entertainment']
+        , ["Vacations", 'Entertainment']
+        , ["Movies", 'Entertainment']
+        , ["Shopping", 'Entertainment']
+        , ["Paycheck", 'Income']
+        , ["Dividends", 'Income']
+        , ["Pension", 'Income']
+    ]
+
+    for i in taglist:
+        record = UniversalTags(tag=i[0], category=i[1])
+        record.save()
+
+# takes 2 dates and returns true if they are a set time apart
+def check_date(date1, date2):
+    result = date1 - date2
+    if result.days < 0:
+        result = result * -1
+    if result.days < 5:
+        return True
+    else:
+        return False
+
+# adds tags and looks for transfers the first time information is uploaded.
+def first_run(**kwargs):
+    print('first run!')
+    # looking for transfers
+    transactions = Transaction.objects.filter(user=kwargs['user'], category=None).all()
+    compare_list = Transaction.objects.filter(user=kwargs['user'], category=None).exclude(credit='0').all()
+    cat_list = Transaction.objects.filter(user=kwargs['user']).exclude(category=None).all()
+    for item in transactions:
+        for comparison in compare_list:
+            if item.debit == comparison.credit and check_date(item.date,comparison.date) and item.account != compare_list.account:
+                x = item.exclude_value
+                print('transfer match found!')
+                item.exclude_value = True
+                y = item.exclude_value
+                item.save()
+        for category in cat_list:    # taging matching transactions
+            if item.description == category.description:
+                item.tag = category.tag
+                item.category = category.category
+                item.save()
+                break

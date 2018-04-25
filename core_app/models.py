@@ -35,6 +35,7 @@ class Transaction (models.Model):
     year = models.IntegerField()
     user = models.CharField(max_length=200)
     account = models.ForeignKey(BankAccounts, on_delete=models.CASCADE)
+    exclude_value = models.BooleanField(default=False)
 
     def __str__(self):
         return '{} - {}'.format(self.user, self.description)

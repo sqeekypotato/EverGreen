@@ -16,7 +16,7 @@ from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm,
     CategorySelection
 from core_app.models import BankAccounts, Transaction
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
-    check_other_records, add_tags_to_database, add_df_to_account
+    check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -24,6 +24,7 @@ from .models import Transaction, Tags, UniversalTags
 def home(request):
     message = 'Hello and welcome to Evergreen Financial!'
     template = loader.get_template('core_app/index.html')
+    # populate_universal_tags() #only run this the first time.  It populates the database
     context = {
         'user':request.user,
         'message':message
@@ -35,16 +36,20 @@ def main_page(request):
         template = loader.get_template('core_app/main.html')
 
         years = Transaction.objects.values_list('year', flat=True).filter(user=request.user).distinct()
-        year_list = [('All', 'All')]
+        year_list = []
         for year in years:
             year_list.append((year, year)) #have to pass a tuple to the select form for choices
+        year_list.sort()
+        year_list = [('All', 'All')] + year_list
 
         months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user).distinct()
-        month_list = [('All', 'All')]
+        month_list = []
         for month in months:
             month_list.append((month, month))
+        month_list.sort()
+        month_list = [('All', 'All')] + month_list
 
-        categories = Tags.objects.values_list('category', flat=True).filter(user=request.user).distinct()
+        categories = Transaction.objects.values_list('category', flat=True).filter(user=request.user).distinct()
         cat_list = [('All', 'All')]
         for cat in categories:
             cat_list.append((cat, cat))
@@ -110,15 +115,21 @@ def account_details(request):
                 my_date = int(request.POST['date'])
                 description = int(request.POST['description'])
 
-
-                records_added = add_df_to_account(dataframe, request, userAccount, my_date, credit, debit, description)
-
-                message = '{} records added to the database.  We are working on processing them now'.format(records_added)
-
+                t = threading.Thread(target=add_df_to_account, kwargs={'dataframe': dataframe,
+                                                                        'request': request,
+                                                                        'userAccount': userAccount,
+                                                                        'dateLocation':my_date,
+                                                                       'creditLocation':credit,
+                                                                       'debitLocation':debit,
+                                                                       'descripLocation':description})
+                t.start()
+                # records_added = add_df_to_account(dataframe, request, userAccount, my_date, credit, debit, description)
+                t1 = threading.Thread(target=first_run, kwargs={'user':request.user,
+                                                                'account_name': userAccount.account_name})
+                t1.start()
                 template = loader.get_template('core_app/index.html')
                 context = {
                     'user': request.user,
-                    'message': message
                 }
                 return HttpResponse(template.render(context, request))
 
@@ -138,6 +149,7 @@ def account_details(request):
 def upload_transactions(request):
     if request.user.is_authenticated:
         if request.method == 'POST':
+            print('uploading transactions')
             form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 userAccount = request._post['accountNames']
@@ -146,15 +158,19 @@ def upload_transactions(request):
                 dataframe = dataframe.reset_index(drop=True)
                 account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first() #gets user account named in the request
 
-                records_added = add_df_to_account(dataframe, request, account, account.transDateCol,
-                                                  account.transCreditCol, account.transDebitCol, account.transDescriptionCol) # sends the dataframe to have the records added to the database
-                message = '{} records added to the database.  We are working on processing them now'.format(
-                    records_added)
+                t = threading.Thread(target=add_df_to_account, args=(dataframe, request, account, account.transDateCol,     # sends the dataframe to have the records added to the database
+                                                  account.transCreditCol, account.transDebitCol, account.transDescriptionCol))
+                t.start()
+                t1 = threading.Thread(target=first_run, kwargs={'user':request.user,
+                                                                'account_name': account.account_name})
+                t1.start()
+
+                message = 'Your records were added to the database.  We are working on processing them now'
 
                 template = loader.get_template('core_app/index.html')
                 context = {
                     'user': request.user,
-                    'message': message
+                    'message': message,
                 }
                 return HttpResponse(template.render(context, request))
 
@@ -203,6 +219,8 @@ def tags(request):
         tempcats1 = list(tempcats)
         cats1 += tempcats1
         cats1.sort()
+        myset = set(cats1) #gets unique values
+        cats1 = list(myset)
 
         tableList=[]
         for i in trans:
@@ -249,7 +267,10 @@ def get_tag(request):
 def get_months(request):
     if request.user.is_authenticated:
         request_year = request._post['year']
-        months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct()
+        if request_year == 'All':
+            months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user).distinct().order_by('monthNum')
+        else:
+            months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct().order_by('monthNum')
         month_list = ['All']
         for month in months:
             month_list.append(month)
@@ -263,7 +284,7 @@ def transaction_processing(myTransactions, my_interval):
 
 def first_chart(request):
     if request.user.is_authenticated:
-        myTransactions = Transaction.objects.filter(user=request.user).all()
+        myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
         result = transaction_processing(myTransactions, 'year')
         request.session['year'] = 'All'
         return JsonResponse(result, safe=False)
@@ -272,22 +293,22 @@ def new_chart_data(request):
     if request.user.is_authenticated:
        if request._post['name'] == 'years':
            if request._post['value'] == 'All':
-               myTransactions = Transaction.objects.filter(user=request.user).all()
+               myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
                result = transaction_processing(myTransactions, 'year')
                return JsonResponse(result)
            else:
                request.session['year'] = request._post['value']
-               myTransactions = Transaction.objects.filter(user=request.user, year=request._post['value']).all()
+               myTransactions = Transaction.objects.filter(user=request.user, year=int(request._post['value']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                return JsonResponse(result)
 
        if request._post['name'] == 'monthNum':
-           if request._post['value'] == 'All':
-               myTransactions = Transaction.objects.filter(user=request.user, year=request.session['year']).all()
+           if request._post['value'] == '0':
+               myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                return JsonResponse(result)
            else:
-               myTransactions = Transaction.objects.filter(user=request.user, monthNum=request._post['value'], year=request.session['year']).all()
+               myTransactions = Transaction.objects.filter(user=request.user, monthNum=int(request._post['value']), year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'day')
                return JsonResponse(result)
 
@@ -303,7 +324,7 @@ def new_tag_data(request):
         tag_dict = {}
         for tag in tag_list:
             result = df.loc[df['tag'] == tag, 'debit'].sum()
-            result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
+            # result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
             tag_dict[tag] = result
         tag_labels = [str(x) for x in tag_list]
 
