@@ -20,7 +20,7 @@ $(document).ready(function() {
 
     $("#id_years").change(function() {
         console.log("Change!");
-
+        $("#tagContainer").hide();
         formName = $(this).attr('name');
         value = $(this).val();
         updateMonths(value)
@@ -34,9 +34,9 @@ $(document).ready(function() {
 
             success: function(results){
                console.log('success!')
+               $('#id_categories option[value=All]').attr('selected','selected');
                chartBalance(results, 0);
                chartCat(results, 0);
-
                if(value=="All"){
                 $("#month_form").hide();}else {
                     $("#month_form").show();
@@ -47,8 +47,7 @@ $(document).ready(function() {
     });
 
     $("#id_monthNum").change(function() {
-        console.log("Change!");
-
+        $("#tagContainer").hide();
         formName = $(this).attr('name');
         value = $(this).val();
 
@@ -65,13 +64,12 @@ $(document).ready(function() {
                chartBalance(results, 0);
                chartCat(results, 0);
                chartTag(results, 0);
+               $('#id_categories option[value=All]').attr('selected','selected');
             }
         });
     });
 
     $("#id_categories").change(function() {
-        console.log("Change!");
-
         formName = $(this).attr('name');
         value = $(this).val();
         if(value == 'All'){
@@ -87,8 +85,10 @@ $(document).ready(function() {
 
             success: function(results){
                console.log('success!')
-               $("#tagContainer").show();
-               chartTag(results, 0);
+                if(value != 'All'){
+                    $("#tagContainer").show();
+                    chartTag(results, 0);
+                }
             }
         });
     });

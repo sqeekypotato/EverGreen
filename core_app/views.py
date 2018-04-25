@@ -50,9 +50,13 @@ def main_page(request):
         month_list = [('All', 'All')] + month_list
 
         categories = Transaction.objects.values_list('category', flat=True).filter(user=request.user).distinct()
-        cat_list = [('All', 'All')]
+        cat_list = []
         for cat in categories:
-            cat_list.append((cat, cat))
+            if cat != None:
+                if cat != 'Income':
+                    cat_list.append((cat, cat))
+        cat_list.sort()
+        cat_list = [('All', 'All')] + cat_list
 
         yearForm = YearForm(years=year_list)
         monthForm = MonthForm(monthNum=month_list)
@@ -319,14 +323,20 @@ def new_tag_data(request):
             tags = Transaction.objects.filter(user=request.user, category=request_cat,).all()
         else:
             tags = Transaction.objects.filter(user=request.user, category=request_cat, year=request.session['year']).all()
+
         df = read_frame(tags)
+        df = prepareDataFrame(df)
+
+        # tag chart
         tag_list = df.tag.unique()
         tag_dict = {}
+        tag_labels = []
         for tag in tag_list:
             result = df.loc[df['tag'] == tag, 'debit'].sum()
-            # result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
-            tag_dict[tag] = result
-        tag_labels = [str(x) for x in tag_list]
+            result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
+            if result > 0:
+                tag_dict[tag] = result
+                tag_labels.append(str(tag))
 
         results = {
             'tag_labels': tag_labels,

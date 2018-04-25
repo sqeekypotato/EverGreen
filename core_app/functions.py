@@ -114,27 +114,26 @@ def prepare_table(df, interval):
     labels = debit_vals.index.tolist()
     labels = [str(x) for x in labels]
 
-
-    del df['credit'] #removes credit values so they don't appear in the tag charting
     # category chart
-    cat_list = df.category.unique()
-    cat_dict = {}
-    for category in cat_list:
-        result = df.loc[df['category'] == category, 'debit'].sum()
-        result = result * -1 #this is put in so the chart shows posative values.  It didn't like negative ones
-        cat_dict[category] = result
-    cat_labels = [str(x) for x in cat_list]
-    cat_labels.sort()
+    # cat_list = df.category.unique()
+    # cat_dict = {}
+    # cat_labels = []
+    # for category in cat_list:
+    #     result = df.loc[df['category'] == category, 'debit'].sum()
+    #     result = result * -1 #this is put in so the chart shows posative values.  It didn't like negative ones
+    #     if result > 0:
+    #         cat_dict[category] = result
+    #         cat_labels.append(str(category))
+    # cat_labels.sort()
 
-    # tag chart
-    tag_list = df.tag.unique()
-    tag_dict = {}
-    for tag in tag_list:
-        result = df.loc[df['tag'] == tag, 'debit'].sum()
-        result = result*-1 #this is put in so the chart shows posative values.  It didn't like negative ones
-        tag_dict[tag] = result
-    tag_labels = [str(x) for x in tag_list]
-    tag_labels.sort()
+    cat_vals = df.groupby(['category'])['debit'].sum()
+    cat_vals = cat_vals.apply(lambda x: x * -1)
+    cat_vals = cat_vals.where(cat_vals > 0)
+    cat_vals = cat_vals.dropna()
+    cat_dict = cat_vals.to_dict()
+    cat_labels = list(cat_dict.keys())
+
+
 
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
@@ -143,8 +142,6 @@ def prepare_table(df, interval):
               'labels':labels,
               'cat_labels':cat_labels,
               'cat_vals':cat_dict,
-              'tag_labels':tag_labels,
-              'tag_vals':tag_dict,
               }
 
     return new_df
