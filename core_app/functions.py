@@ -114,18 +114,6 @@ def prepare_table(df, interval):
     labels = debit_vals.index.tolist()
     labels = [str(x) for x in labels]
 
-    # category chart
-    # cat_list = df.category.unique()
-    # cat_dict = {}
-    # cat_labels = []
-    # for category in cat_list:
-    #     result = df.loc[df['category'] == category, 'debit'].sum()
-    #     result = result * -1 #this is put in so the chart shows posative values.  It didn't like negative ones
-    #     if result > 0:
-    #         cat_dict[category] = result
-    #         cat_labels.append(str(category))
-    # cat_labels.sort()
-
     cat_vals = df.groupby(['category'])['debit'].sum()
     cat_vals = cat_vals.apply(lambda x: x * -1)
     cat_vals = cat_vals.where(cat_vals > 0)

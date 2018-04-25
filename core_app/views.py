@@ -291,12 +291,14 @@ def first_chart(request):
         myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
         result = transaction_processing(myTransactions, 'year')
         request.session['year'] = 'All'
+        request.session['monthNum'] = '0'
         return JsonResponse(result, safe=False)
 
 def new_chart_data(request):
     if request.user.is_authenticated:
        if request._post['name'] == 'years':
            if request._post['value'] == 'All':
+               request.session['year'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
                result = transaction_processing(myTransactions, 'year')
                return JsonResponse(result)
@@ -308,10 +310,12 @@ def new_chart_data(request):
 
        if request._post['name'] == 'monthNum':
            if request._post['value'] == '0':
+               request.session['monthNum'] = '0'
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                return JsonResponse(result)
            else:
+               request.session['monthNum'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, monthNum=int(request._post['value']), year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'day')
                return JsonResponse(result)
@@ -321,8 +325,14 @@ def new_tag_data(request):
         request_cat = request._post['value']
         if request.session['year'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat,).all()
+        elif request.session['monthNum'] == '0':
+            tags = Transaction.objects.filter(user=request.user, category=request_cat, year=int(request.session['year']),
+                                              ).all()
         else:
-            tags = Transaction.objects.filter(user=request.user, category=request_cat, year=request.session['year']).all()
+            tags = Transaction.objects.filter(user=request.user, category=request_cat,
+                                              year=int(request.session['year']),monthNum = int(request.session['monthNum'])
+                                              ).all()
+
 
         df = read_frame(tags)
         df = prepareDataFrame(df)
