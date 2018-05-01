@@ -53,6 +53,8 @@ urlpatterns = [
     url(r'^first_charts/$', views.first_chart, name='first_charts'),
     url(r'^get_months/$', views.get_months, name='get_months'),
     url(r'^new_tag_data/$', views.new_tag_data, name='new_tag_data'),
+    url(r'^new_income_tag_data/$', views.new_income_tag_data, name='new_income_tag_data'),
+    url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
     # # # password_change

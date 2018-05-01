@@ -79,3 +79,11 @@ class CategorySelection(forms.Form):
         categories = kwargs.pop('categories')
         super(CategorySelection, self).__init__(*args, **kwargs)
         self.fields['categories'].choices = categories
+
+class IncomeCategorySelection(forms.Form):
+    income_categories = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, **kwargs):
+        income_categories = kwargs.pop('income_categories')
+        super(IncomeCategorySelection, self).__init__(*args, **kwargs)
+        self.fields['income_categories'].choices = income_categories

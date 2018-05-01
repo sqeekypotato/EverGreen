@@ -1,6 +1,8 @@
 from io import StringIO
 import pandas as pd
 import calendar
+import datetime
+from django_pandas.io import read_frame
 
 from .models import Transaction, Tags, UniversalTags
 
@@ -114,6 +116,7 @@ def prepare_table(df, interval):
     labels = debit_vals.index.tolist()
     labels = [str(x) for x in labels]
 
+    # for category charts
     cat_vals = df.groupby(['category'])['debit'].sum()
     cat_vals = cat_vals.apply(lambda x: x * -1)
     cat_vals = cat_vals.where(cat_vals > 0)
@@ -121,7 +124,12 @@ def prepare_table(df, interval):
     cat_dict = cat_vals.to_dict()
     cat_labels = list(cat_dict.keys())
 
-
+    # for income charts
+    inc_vals = df.groupby(['category'])['credit'].sum()
+    inc_vals = inc_vals.where(inc_vals > 0)
+    inc_vals = inc_vals.dropna()
+    inc_dict = inc_vals.to_dict()
+    inc_labels = list(inc_dict.keys())
 
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
@@ -130,6 +138,8 @@ def prepare_table(df, interval):
               'labels':labels,
               'cat_labels':cat_labels,
               'cat_vals':cat_dict,
+              'inc_vals':inc_dict,
+              'inc_labels':inc_labels
               }
 
     return new_df
@@ -174,13 +184,14 @@ def populate_universal_tags():
         , ['Insurance', 'Housing']
         , ['Electricity', 'Utilities']
         , ['Water', 'Utilities']
-        , ['Heating', 'Utilities']
+        , ['Gas', 'Utilities']
         , ['Garbage', 'Utilities']
         , ['Phones', 'Utilities']
         , ['Cable', 'Utilities']
         , ['Internet', 'Utilities']
-        , ["Adults' Clothing", 'Clothing']
-        , ["Children's Clothing", 'Clothing']
+        , ["Adults' Clothing", 'Shopping']
+        , ["Children's Clothing", 'Shopping']
+        , ["Hobbies", 'Shopping']
         , ["Fuel", 'Transportation']
         , ["Tires", 'Transportation']
         , ["Oil Changes", 'Transportation']
@@ -229,7 +240,7 @@ def check_date(date1, date2):
     else:
         return False
 
-# adds tags and looks for transfers the first time information is uploaded.
+# adds tags and looks for transfers the first time a new account is created is uploaded.
 def first_run(**kwargs):
     print('first run!')
     # looking for transfers
@@ -250,3 +261,22 @@ def first_run(**kwargs):
                 item.category = category.category
                 item.save()
                 break
+
+def prepare_list_for_dropdown(query):
+    item_list = []
+    for item in query:
+        item_list.append((item, item))  # have to pass a tuple to the select form for choices
+    item_list.sort()
+    year_list = [('All', 'All')] + item_list
+    return year_list
+
+# take a category or tag and returns the previous years spending on it
+def get_comparison(tag):
+    print('hello')
+    # now = datetime.datetime.now()
+    # last_year = now - datetime.timedelta(weeks=52)
+    # records = Transaction.objects.filter(tag=tag).all()
+    # df = read_frame(records)
+    # df = prepareDataFrame(df)
+    #
+    # now_credit_vals_year = df.groupby([now])['credit'].sum()

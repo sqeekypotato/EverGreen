@@ -13,14 +13,16 @@ import pandas as pd
 import threading
 
 from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm,\
-    CategorySelection
+    CategorySelection, IncomeCategorySelection
 from core_app.models import BankAccounts, Transaction
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
-    check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run
+    check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
+    prepare_list_for_dropdown
+
 
 from .models import Transaction, Tags, UniversalTags
 
-# Create your views here.
+# _______________________main pages ________________________________________
 def home(request):
     message = 'Hello and welcome to Evergreen Financial!'
     template = loader.get_template('core_app/index.html')
@@ -32,22 +34,16 @@ def home(request):
     return HttpResponse(template.render(context, request))
 
 def main_page(request):
+
     if request.user.is_authenticated:
         template = loader.get_template('core_app/main.html')
 
+        # _______________________preparing lists for dropdowns for forms ____________________________
         years = Transaction.objects.values_list('year', flat=True).filter(user=request.user).distinct()
-        year_list = []
-        for year in years:
-            year_list.append((year, year)) #have to pass a tuple to the select form for choices
-        year_list.sort()
-        year_list = [('All', 'All')] + year_list
+        year_list = prepare_list_for_dropdown(years)
 
         months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user).distinct()
-        month_list = []
-        for month in months:
-            month_list.append((month, month))
-        month_list.sort()
-        month_list = [('All', 'All')] + month_list
+        month_list = prepare_list_for_dropdown(months)
 
         categories = Transaction.objects.values_list('category', flat=True).filter(user=request.user).distinct()
         cat_list = []
@@ -58,14 +54,29 @@ def main_page(request):
         cat_list.sort()
         cat_list = [('All', 'All')] + cat_list
 
+        income_categories = Transaction.objects.values_list('category', flat=True).filter(user=request.user).distinct()
+        income_cat_list = []
+        for cat in income_categories:
+            if cat == 'Income':
+                income_cat_list.append((cat, cat))
+        income_cat_list.sort()
+        income_cat_list = [('All', 'All')] + income_cat_list
+        # __________________ end of dropdown preperations __________________________________________________________
+
         yearForm = YearForm(years=year_list)
         monthForm = MonthForm(monthNum=month_list)
         catForm = CategorySelection(categories=cat_list)
+        incomeForm = IncomeCategorySelection(income_categories=income_cat_list)
+
+        # ___________________________getting values for comparing expenses to previous years___________________________
+
 
         context = {
             'yearForm':yearForm,
             'monthForm':monthForm,
             'catForm':catForm,
+            'incomeCatForm':incomeForm,
+            'year_title':request.session['year']
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -300,12 +311,14 @@ def new_chart_data(request):
            if request._post['value'] == 'All':
                request.session['year'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
-               result = transaction_processing(myTransactions, 'year')
+               result = transaction_processing(myTransactions, 'year') #this is added to change the title of the charts
+               result['session_title'] = 'All Years'
                return JsonResponse(result)
            else:
                request.session['year'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request._post['value']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
+               result['session_title'] = request.session['year'] #this is added to change the title of the charts
                return JsonResponse(result)
 
        if request._post['name'] == 'monthNum':
@@ -313,11 +326,13 @@ def new_chart_data(request):
                request.session['monthNum'] = '0'
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
+               result['session_title'] = request.session['year'] #this is added to change the title of the charts
                return JsonResponse(result)
            else:
                request.session['monthNum'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, monthNum=int(request._post['value']), year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'day')
+               result['session_title'] = '{} {}'.format(request.session['monthNum'], request.session['year']) #this is added to change the title of the charts
                return JsonResponse(result)
 
 def new_tag_data(request):
@@ -351,6 +366,80 @@ def new_tag_data(request):
         results = {
             'tag_labels': tag_labels,
             'tag_vals': tag_dict,
+        }
+        return JsonResponse(results, safe=False)
+
+def new_income_tag_data(request):
+    if request.user.is_authenticated:
+        request_cat = request._post['value']
+        if request.session['year'] == 'All':
+            tags = Transaction.objects.filter(user=request.user, category=request_cat, ).all()
+        elif request.session['monthNum'] == '0':
+            tags = Transaction.objects.filter(user=request.user, category=request_cat,
+                                              year=int(request.session['year']),
+                                              ).all()
+        else:
+            tags = Transaction.objects.filter(user=request.user, category=request_cat,
+                                              year=int(request.session['year']),
+                                              monthNum=int(request.session['monthNum'])
+                                              ).all()
+
+        df = read_frame(tags)
+        df = prepareDataFrame(df)
+
+        # income tag chart
+        tag_list = df.tag.unique()
+        tag_dict = {}
+        tag_labels = []
+        for tag in tag_list:
+            result = df.loc[df['tag'] == tag, 'credit'].sum()
+            if result > 0:
+                tag_dict[tag] = result
+                tag_labels.append(str(tag))
+
+        results = {
+            'income_tag_labels': tag_labels,
+            'income_tag_vals': tag_dict,
+        }
+        return JsonResponse(results, safe=False)
+
+def update_cat_dropdown(request):
+    if request.user.is_authenticated:
+        year = request.session['year']
+        month = request.session['monthNum']
+        if year == 'All':
+            tags = Transaction.objects.filter(user=request.user).all()
+        elif request.session['monthNum'] == '0':
+            tags = Transaction.objects.filter(user=request.user, year=int(request.session['year']),).all()
+        else:
+            tags = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
+                                              monthNum=int(request.session['monthNum'])).all()
+
+        df = read_frame(tags)
+        df = prepareDataFrame(df)
+
+        # income tag chart
+        cat_list = df.category.unique()
+        debit_labels = []
+        credit_labels = []
+        for cat in cat_list:
+            credit = df.loc[df['category'] == cat, 'credit'].sum()
+            debit = df.loc[df['category'] == cat, 'debit'].sum()
+            debit = debit * -1
+            if credit > 0:
+                credit_labels.append(str(cat))
+            if debit > 0:
+                debit_labels.append(str(cat))
+        debit_labels.sort()
+        credit_labels.sort()
+        debit_labels = ['All'] + debit_labels
+        credit_labels = ['All'] + credit_labels
+
+
+
+        results = {
+            'debit': debit_labels,
+            'credit': credit_labels,
         }
         return JsonResponse(results, safe=False)
 
