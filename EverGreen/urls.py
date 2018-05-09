@@ -55,6 +55,8 @@ urlpatterns = [
     url(r'^new_tag_data/$', views.new_tag_data, name='new_tag_data'),
     url(r'^new_income_tag_data/$', views.new_income_tag_data, name='new_income_tag_data'),
     url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
+    # class views
+    path('transaction-detail/<int:pk>/', views.TransactionUpdate.as_view(), name='transaction-update'),
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
     # # # password_change

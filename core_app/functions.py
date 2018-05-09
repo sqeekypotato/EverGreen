@@ -4,7 +4,7 @@ import calendar
 import datetime
 from django_pandas.io import read_frame
 
-from .models import Transaction, Tags, UniversalTags
+from .models import Transaction, Tags, UniversalTags, UserRule
 
 # takes the file, fixes it and returns a dataframe
 def fixQuotesForCSV(file):
@@ -62,6 +62,8 @@ def add_df_to_account(dataframe, request, userAccount, dateLocation, creditLocat
         trans.save()  # adds record to the database
         records_added += 1
 
+    first_run(user=request.user)
+
     return records_added
 
 # returns a dict that has the format dict['recordNumber']['tag'] = tagValue
@@ -111,7 +113,7 @@ def prepare_table(df, interval):
     debit_vals = df.groupby([interval])['debit'].sum()
     debit_vals = debit_vals.round(2)
     monthName = df.groupby([interval])['monthName'].unique().astype(str)
-    balance_vals = df.groupby([interval])['balance'].mean()
+    balance_vals = df.groupby([interval])['balance'].median()
     balance_vals = balance_vals.round(2)
     labels = debit_vals.index.tolist()
     labels = [str(x) for x in labels]
@@ -146,24 +148,34 @@ def prepare_table(df, interval):
 
 # checks other records in the database and tags them
 def check_other_records(**kwargs):
+    print('OTHER RECORD CHECK')
     other_records = Transaction.objects.filter(description=kwargs['description'], category=None).all()
     print('{} records found to append category to'.format(len(other_records)))
     for record in other_records:
         record.category = kwargs['category']
         record.tag = kwargs['tag']
+        if record.category == 'Transfer' and record.tag == 'Transfer':
+            record.exclude_value = True
         record.save()
+
+    # added this because I couldn't remember if check other records was used in more than one place and I am lazy
+
+# added this because I was unsure all the places check other records was called and I needed a list
+def check_other_records_list(**kwargs):
+    for item in kwargs['value']:
+        check_other_records(description=item['description'], category=item['category'], tag=item['tag'])
 
 # checks if cat and tag are in database (as a pair) and if not, adds them
 def add_tags_to_database(cat, tag, user):
     add_tag = True
-    other_tags = Tags.objects.filter(category=cat).all()
-    print('{} records found with {} category'.format(len(other_tags), cat))
+    other_tags = Tags.objects.filter(category=cat, user=user).all()
     for record in other_tags:
         if record.tag == tag:
             add_tag = False
     if add_tag:
         new_tag = Tags(category=cat, tag=tag, user=user)
         new_tag.save()
+        print('new tag added to database')
 
 # adds values to univeral tag database
 def populate_universal_tags():
@@ -224,6 +236,7 @@ def populate_universal_tags():
         , ["Paycheck", 'Income']
         , ["Dividends", 'Income']
         , ["Pension", 'Income']
+        , ["Transfer", 'Transfer']
     ]
 
     for i in taglist:
@@ -243,25 +256,31 @@ def check_date(date1, date2):
 # adds tags and looks for transfers the first time a new account is created is uploaded.
 def first_run(**kwargs):
     print('first run!')
-    # looking for transfers
+    run_user_rules(kwargs['user'])
+
+    # looking for transfers ________________________________________________________________________
     transactions = Transaction.objects.filter(user=kwargs['user'], category=None).all()
     compare_list = Transaction.objects.filter(user=kwargs['user'], category=None).exclude(credit='0').all()
     cat_list = Transaction.objects.filter(user=kwargs['user']).exclude(category=None).all()
     for item in transactions:
         for comparison in compare_list:
-            if item.debit == comparison.credit and check_date(item.date,comparison.date) and item.account != compare_list.account:
+            if item.debit == comparison.credit and check_date(item.date,comparison.date) and item.account != comparison.account:
                 x = item.exclude_value
                 print('transfer match found!')
                 item.exclude_value = True
                 y = item.exclude_value
                 item.save()
-        for category in cat_list:    # taging matching transactions
+    # end of transfer search ___________________________________________________________________________________
+
+    # taging matching transactions______________________________________________________________________________
+        for category in cat_list:
             if item.description == category.description:
                 item.tag = category.tag
                 item.category = category.category
                 item.save()
                 break
 
+# takes a list of single times and returns a tuple like this ('item', 'item').  Needed to prepare select dropdowns
 def prepare_list_for_dropdown(query):
     item_list = []
     for item in query:
@@ -270,13 +289,112 @@ def prepare_list_for_dropdown(query):
     year_list = [('All', 'All')] + item_list
     return year_list
 
-# take a category or tag and returns the previous years spending on it
-def get_comparison(tag):
-    print('hello')
-    # now = datetime.datetime.now()
-    # last_year = now - datetime.timedelta(weeks=52)
-    # records = Transaction.objects.filter(tag=tag).all()
-    # df = read_frame(records)
-    # df = prepareDataFrame(df)
-    #
-    # now_credit_vals_year = df.groupby([now])['credit'].sum()
+def pretteyfy_numbers(number):
+    if number:
+        number = str(number)
+        dollars, cents = number.split('.')
+        cents = cents[:2]
+        if len(dollars) > 6:
+            part3 = dollars[-3:]
+            part2 = dollars[-6:-3]
+            part1 = dollars[:-6]
+            num_string = part1 + ',' + part2 + ',' + part3
+            return '${}.{}'.format(num_string, cents)
+        elif len(dollars) <= 6 and len(dollars) > 3:
+            part2 = dollars[-3:]
+            part1 = dollars[:-3]
+            num_string = part1 + ',' + part2
+            return '${}.{}'.format(num_string, cents)
+        elif len(dollars) <= 3:
+            return '${}.{}'.format(dollars, cents)
+
+# take a category or tag and returns the previous year and previous month's spending on it
+def get_comparison(tag, user):
+    now = datetime.datetime.now()
+    last_year = now.year - 1
+    last_month = now.month - 1
+    if last_month < 1:
+        last_month = 12
+        last_year -= last_year
+
+    transactions = Transaction.objects.filter(user=user, tag=tag[1], category=tag[0]).all()
+    df = read_frame(transactions)
+    df = prepareDataFrame(df)
+    if df['credit'].sum() != 0.0 or df['debit'].sum() != 0.0: # tests to make sure there are acutal values to report on or else it returns False which is caught later and not reported on
+        last_month_df = df[(df.monthNum == last_month) & (df.year == now.year)]
+        last_year_month_df = df[(df.monthNum == last_month) & (df.year == last_year)]
+        ytd_df = df[(df.monthNum <= now.month) & (df.year == now.year)]
+        last_ytd_df = df[(df.monthNum <= now.month) & (df.year == last_year)]
+
+        def get_values(df):
+            credit_vals = df['credit'].sum()
+            debit_vals = df['debit'].sum()
+            debit_vals = debit_vals * -1
+            if credit_vals < 1:
+                credit_vals = None
+            if debit_vals < 1:
+                debit_vals = None
+            my_dict = {'credit':pretteyfy_numbers(credit_vals),
+                       'debit':pretteyfy_numbers(debit_vals)}
+            return my_dict
+
+        last_month = get_values(last_month_df)
+        last_year_month = get_values(last_year_month_df)
+        ytd = get_values(ytd_df)
+        last_ytd = get_values(last_ytd_df)
+
+        return {'last_month':last_month,
+                'last_year_month':last_year_month,
+                'ytd':ytd,
+                'last_ytd':last_ytd,}
+    else:
+        return False
+
+# gets a list of tags that the user has requested analysis be run on
+def get_comparison_tags(user):
+    return_list = []
+    other_tags = Tags.objects.filter(user=user, drill_down=True).all()
+    for i in other_tags:
+        return_list.append((i.category, i.tag))
+
+
+    return return_list
+
+# adds custom user rule to the database
+def create_rule(user, detail, description, category, tag):
+    new_rule = UserRule()
+    new_rule.user = user
+    new_rule.description = description
+    new_rule.category = category
+    new_rule.tag = tag
+    if detail == 'begins_with':
+        new_rule.begins_with = True
+    elif detail == 'ends_with':
+        new_rule.ends_with = True
+    new_rule.save()
+    run_user_rules(user)
+
+# Goes through all the user rules that a user has created and runs them
+def run_user_rules(user):
+    rules = UserRule.objects.filter(user=user).all()
+    record_count = 0
+    for rule in rules:
+        if rule.begins_with:
+            transactions = Transaction.objects.filter(user=user, description__startswith=rule.description.strip(), category=None).all()
+            for item in transactions:
+                item.tag = rule.tag
+                item.category = rule.category
+                if item.category == 'Transfer' and item.tag == 'Transfer':
+                    item.exclude_value = True
+                item.save()
+                record_count += 1
+        elif rule.ends_with:
+            transactions = Transaction.objects.filter(user=user, description__endswith=rule.description.strip(), category=None).all()
+            for item in transactions:
+                item.tag = rule.tag
+                item.category = rule.category
+                if item.category == 'Transfer' and item.tag == 'Transfer':
+                    item.exclude_value = True
+                item.save()
+                record_count += 1
+    print('Modified {} records using user rules'.format(record_count))

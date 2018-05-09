@@ -5,10 +5,10 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import Tags, BankAccounts, Transaction, UniversalTags
+from .models import Tags, BankAccounts, Transaction, UniversalTags, UserRule
 
 admin.site.register(Tags)
 admin.site.register(BankAccounts)
 admin.site.register(Transaction)
 admin.site.register(UniversalTags)
-
+admin.site.register(UserRule)

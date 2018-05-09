@@ -8,6 +8,8 @@ from django.template import loader
 from django.core.mail import EmailMessage
 from django.views.generic import View
 from django_pandas.io import read_frame
+from django.views.generic.edit import UpdateView
+from django.urls import reverse_lazy
 
 import pandas as pd
 import threading
@@ -17,7 +19,7 @@ from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm,
 from core_app.models import BankAccounts, Transaction
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
-    prepare_list_for_dropdown
+    prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule
 
 
 from .models import Transaction, Tags, UniversalTags
@@ -69,14 +71,27 @@ def main_page(request):
         incomeForm = IncomeCategorySelection(income_categories=income_cat_list)
 
         # ___________________________getting values for comparing expenses to previous years___________________________
+        tag_list = get_comparison_tags(request.user)
+        comparison_list = {}
+        for tag in tag_list:
+            temp_dict = {}
+            value = get_comparison(tag, request.user)
+            if value:
+                temp_dict ['category'] = tag[0]
+                temp_dict['tag'] = tag[1]
+                temp_dict['value'] = value
+                temp_string = '{}_{}'.format(tag[0], tag[1])
+                comparison_list[temp_string] = temp_dict
 
+        request.session['year'] = 'All'
 
         context = {
             'yearForm':yearForm,
             'monthForm':monthForm,
             'catForm':catForm,
             'incomeCatForm':incomeForm,
-            'year_title':request.session['year']
+            'year_title':request.session['year'],
+            'comparison_list':comparison_list
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -139,9 +154,7 @@ def account_details(request):
                                                                        'descripLocation':description})
                 t.start()
                 # records_added = add_df_to_account(dataframe, request, userAccount, my_date, credit, debit, description)
-                t1 = threading.Thread(target=first_run, kwargs={'user':request.user,
-                                                                'account_name': userAccount.account_name})
-                t1.start()
+
                 template = loader.get_template('core_app/index.html')
                 context = {
                     'user': request.user,
@@ -176,9 +189,6 @@ def upload_transactions(request):
                 t = threading.Thread(target=add_df_to_account, args=(dataframe, request, account, account.transDateCol,     # sends the dataframe to have the records added to the database
                                                   account.transCreditCol, account.transDebitCol, account.transDescriptionCol))
                 t.start()
-                t1 = threading.Thread(target=first_run, kwargs={'user':request.user,
-                                                                'account_name': account.account_name})
-                t1.start()
 
                 message = 'Your records were added to the database.  We are working on processing them now'
 
@@ -207,27 +217,39 @@ def tags(request):
         if request.method == "POST":
             form_dict = request._post
             tagDict = buildTagDict(form_dict)
+            tag_search_list = []
 
             for transNum, values in tagDict.items():
-                print('new loop in tags')
-                temp_record = Transaction.objects.get(id=transNum)
-                temp_record.tag = values['tag']
-                temp_record.category = values['cat']
-                temp_record.year = temp_record.date.year
-                temp_record.monthNum = temp_record.date.month
-                temp_record.monthName = temp_record.date.strftime("%b")
-                temp_record.save()
+                if transNum != 'rule':
+                    print('new loop in tags')
+                    temp_record = Transaction.objects.get(id=transNum)
+                    temp_record.tag = values['tag']
+                    temp_record.category = values['cat']
+                    temp_record.year = temp_record.date.year
+                    temp_record.monthNum = temp_record.date.month
+                    temp_record.monthName = temp_record.date.strftime("%b")
+                    if temp_record.category == 'Transfer' and temp_record.tag == 'Transfer':
+                        temp_record.exclude_value = True
+                    temp_record.save()
+                    search_dict = {'description': temp_record.description,
+                                   'category': temp_record.category,
+                                   'tag': temp_record.tag}
+                    tag_search_list.append(search_dict)
+                    add_tags_to_database(temp_record.category, temp_record.tag, request.user)
 
-                t = threading.Thread(target=check_other_records, kwargs={'description': temp_record.description,
-                                                                         'category':temp_record.category,
-                                                                         'tag':temp_record.tag})
-                t.start()
+            t = threading.Thread(target=check_other_records_list, kwargs={'value':tag_search_list})
+            t.start()
 
-                add_tags_to_database(temp_record.category, temp_record.tag, request.user)
+            if request._post['user_rule_detail'] or request._post['user_rule_description']:
+                if request._post['user_rule_detail'] and request._post['user_rule_description']:
+                    create_rule(request.user, request._post['user_rule_detail'], request._post['user_rule_description'],
+                                request._post['user_rule_category'], request._post['user_rule_tag'])
+                else:
+                    pass #put error code here
             return redirect('tags')
 
-
-        trans = Transaction.objects.all().filter(user=request.user, tag=None)[:20] #gets twenty records
+        trans = Transaction.objects.distinct().filter(user=request.user, tag=None)[:10] #gets ten records
+        num_of_blank_trans = Transaction.objects.filter(user=request.user, tag=None).count()
         cats = Tags.objects.distinct().values_list('category', flat=True)
         tempcats = UniversalTags.objects.distinct().values_list('category', flat=True)
         cats1 = list(cats)
@@ -245,7 +267,8 @@ def tags(request):
         template = loader.get_template('core_app/tags.html')
         context = {
             'tableList' : tableList,
-            'category' : cats1
+            'category' : cats1,
+            'num_of_blank_trans':num_of_blank_trans
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -442,6 +465,14 @@ def update_cat_dropdown(request):
             'credit': credit_labels,
         }
         return JsonResponse(results, safe=False)
+
+# _____________________ Class Views ___________________________
+
+class TransactionUpdate(UpdateView):
+    model = Transaction
+    fields = ['date', 'description', 'credit', 'debit', 'category', 'tag', 'account', 'exclude_value']
+    success_url = '/main_page/'
+
 
 # __________________Generic Pages______________________________
 def signup(request):

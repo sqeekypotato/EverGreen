@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
-from datetime import datetime
+from django.urls import reverse
 
 # Create your models here.
 
@@ -40,13 +40,15 @@ class Transaction (models.Model):
     def __str__(self):
         return '{} - {}'.format(self.user, self.description)
 
+    def get_absolute_url(self):
+        return reverse('transaction-detail', kwargs={'pk': self.pk})
+
 class Tags (models.Model):
 
     tag = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    tag_average_amount = models.IntegerField(null=True, blank=True)
-    cat_average_amount = models.IntegerField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    drill_down = models.BooleanField(default=False)
 
     def __str__(self):
         return '{} - {}'.format(self.category, self.tag)
@@ -54,8 +56,18 @@ class Tags (models.Model):
 class UniversalTags (models.Model):
     tag = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    tag_average_amount = models.IntegerField(null=True, blank=True)
-    cat_average_amount = models.IntegerField(null=True, blank=True)
+    drill_down = models.BooleanField(default=False)
 
     def __str__(self):
         return '{} - {}'.format(self.category, self.tag)
+
+class UserRule (models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    begins_with = models.BooleanField(default=False)
+    ends_with = models.BooleanField(default=False)
+    description = description = models.CharField(max_length=1000)
+    tag = models.CharField(max_length=50, null=True, blank=True)
+    category = models.CharField(max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return '{} - {}'.format(self.user, self.description)
