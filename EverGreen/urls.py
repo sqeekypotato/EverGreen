@@ -36,6 +36,8 @@ urlpatterns = [
     url(r'^account_details/$', views.account_details, name='account_details'),
     # file_upload
     url(r'^upload_transactions/$', views.upload_transactions, name='upload_transactions'),
+    # display_transaction_details
+    url(r'^display_transaction_details/$', views.display_transaction_details, name='display_transaction_details'),
     # tags
     url(r'^tags/$', views.tags, name='tags'),
     # get_tags
@@ -55,6 +57,7 @@ urlpatterns = [
     url(r'^new_tag_data/$', views.new_tag_data, name='new_tag_data'),
     url(r'^new_income_tag_data/$', views.new_income_tag_data, name='new_income_tag_data'),
     url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
+    url(r'^transaction_details/$', views.transaction_details, name='transaction_details'),
     # class views
     path('transaction-detail/<int:pk>/', views.TransactionUpdate.as_view(), name='transaction-update'),
     # # # password_reset

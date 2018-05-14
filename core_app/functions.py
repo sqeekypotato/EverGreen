@@ -94,6 +94,7 @@ def prepareDataFrame(dataframe):
     dataframe['credit'] = dataframe['credit'].apply(lambda x: x / 100)
     dataframe['debit'] = dataframe['debit'].apply(lambda x: x/-100)
     dataframe['balance'] = dataframe['balance'].apply(lambda x: x / 100)
+    dataframe['date'] = dataframe['date'].dt.date
     return dataframe
 
 # changes data type from numpy.int64 to float so it can be displayed in json

@@ -25,7 +25,6 @@ $(document).ready(function() {
 });
 
     $("#id_years").change(function() {
-        console.log("Change!");
         $("#tagContainer").hide();
         $("#income_tag_container").hide();
         formName = $(this).attr('name');
@@ -40,7 +39,6 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('success!')
                updateCatDropdowns()
                chartBalance(results, 0);
                chartCat(results, 0);
@@ -70,7 +68,7 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('success!')
+                updateCatDropdowns()
                chartBalance(results, 0);
                chartCat(results, 0);
                chartTag(results, 0);
@@ -95,7 +93,6 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('success!')
                 if(value != 'All'){
                     $("#tagContainer").show();
                     chartTag(results, 0);
@@ -119,7 +116,6 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('success!')
                 if(value != 'All'){
                     $("#income_tag_container").show();
                     incomeTags(results, 0);
@@ -137,8 +133,6 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('month update success!')
-               console.log(results)
                var $el = $("#id_monthNum");
                 $el.empty(); // remove old options
                 $.each(results, function(key,value) {
@@ -160,8 +154,6 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               console.log('cat dropdown update success!')
-               console.log(results)
                 var $el = $("#id_categories");
                 $el.empty(); // remove old options
                 $.each(results['debit'], function(key,value) {
@@ -182,11 +174,43 @@ $(document).ready(function() {
     }
 
     function chartBalance(results, first){
-        console.log('balance chart!')
       if (first == 0){
        balanceChart.destroy();
       }
       balanceChart = new Chart.Line(ctx, {
+      options:{
+            onClick: function(evt) {
+                  console.log('click event!')
+                  var activePoints = this.getElementsAtEvent(evt);
+                  if (activePoints[0]) {
+                    var chartData = activePoints[0]['_chart'].config.data;
+                    var idx = activePoints[0]['_index'];
+
+                    var label = chartData.labels[idx];
+                    var value = chartData.datasets[0].data[idx];
+
+
+                  }
+
+                  $.ajax({
+                    type: "POST",
+                    url: "/transaction_details/",
+                    data: {'name': 'all',
+                            'value':label
+                            },
+                    dataType: 'json',
+
+                    success: function() {
+                     console.log('success for transaction details');
+                     window.location.href = "/display_transaction_details/";
+                  },
+
+                });
+
+
+
+                }
+          },
       data:{
       labels: results['labels'],
       datasets: [
@@ -213,7 +237,6 @@ $(document).ready(function() {
 
     function chartCat(results, first){
 //        create chart
-        console.log('category chart!')
         var categories = results['cat_vals']
         var myValues = $.map(categories, function(value, key) { return value });
         var colours = []
@@ -225,24 +248,52 @@ $(document).ready(function() {
           }
           categoryChart = new Chart(ctx2, {
           type: 'doughnut',
+          options:{
+            onClick: function(evt) {
+                  console.log('click event!')
+                  var activePoints = this.getElementsAtEvent(evt);
+                  if (activePoints[0]) {
+                    var chartData = activePoints[0]['_chart'].config.data;
+                    var idx = activePoints[0]['_index'];
+
+                    var label = chartData.labels[idx];
+                    var value = chartData.datasets[0].data[idx];
+
+
+                  }
+
+                  $.ajax({
+                    type: "POST",
+                    url: "/transaction_details/",
+                    data: {'name': 'category',
+                            'value':label
+                            },
+                    dataType: 'json',
+
+                    success: function() {
+                     console.log('success for transaction details');
+                     window.location.href = "/display_transaction_details/";
+                  },
+
+                });
+
+                }
+          },
           data:{
           labels: results['cat_labels'],
           datasets: [
-
               {
                   backgroundColor: colours,
                   data: myValues
               }
           ]
-          }
+          },
         });
 
 }
 
     function chartTag(results, first){
-        console.log('tag chart!')
         var myValues1 = $.map(results['tag_vals'], function(value, key) { return value });
-        console.log(myValues1)
         var colours = []
         for (var i = 0; i < myValues1.length; i++) {
             colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
@@ -252,6 +303,37 @@ $(document).ready(function() {
       }
       tagChart = new Chart(ctx3, {
       type: 'doughnut',
+      options:{
+            onClick: function(evt) {
+                  console.log('click event!')
+                  var activePoints = this.getElementsAtEvent(evt);
+                  if (activePoints[0]) {
+                    var chartData = activePoints[0]['_chart'].config.data;
+                    var idx = activePoints[0]['_index'];
+
+                    var label = chartData.labels[idx];
+                    var value = chartData.datasets[0].data[idx];
+
+
+                  }
+
+                  $.ajax({
+                    type: "POST",
+                    url: "/transaction_details/",
+                    data: {'name': 'tag',
+                            'value':label
+                            },
+                    dataType: 'json',
+
+                    success: function() {
+                     console.log('success for transaction details');
+                     window.location.href = "/display_transaction_details/";
+                  },
+
+                });
+
+                }
+          },
       data:{
       labels: results['tag_labels'],
       datasets: [
@@ -266,7 +348,6 @@ $(document).ready(function() {
 }
 
     function incomeChart(results, first){
-        console.log('income chart!')
         var myValues = $.map(results['inc_vals'], function(value, key) { return value });
         var colours = []
         for (var i = 0; i < myValues.length; i++) {
@@ -277,6 +358,37 @@ $(document).ready(function() {
       }
       incomeCatChart = new Chart(ctx4, {
       type: 'doughnut',
+      options:{
+            onClick: function(evt) {
+                  console.log('click event!')
+                  var activePoints = this.getElementsAtEvent(evt);
+                  if (activePoints[0]) {
+                    var chartData = activePoints[0]['_chart'].config.data;
+                    var idx = activePoints[0]['_index'];
+
+                    var label = chartData.labels[idx];
+                    var value = chartData.datasets[0].data[idx];
+
+
+                  }
+
+                  $.ajax({
+                    type: "POST",
+                    url: "/transaction_details/",
+                    data: {'name': 'category',
+                            'value':label
+                            },
+                    dataType: 'json',
+
+                    success: function() {
+                     console.log('success for transaction details');
+                     window.location.href = "/display_transaction_details/";
+                  },
+
+                });
+
+                }
+          },
       data:{
       labels: results['inc_labels'],
       datasets: [
@@ -291,9 +403,7 @@ $(document).ready(function() {
 }
 
     function incomeTags(results, first){
-        console.log('income tag chart!')
         var myValues2 = $.map(results['income_tag_vals'], function(value, key) { return value });
-        console.log(myValues2)
         var colours = []
         for (var i = 0; i < myValues2.length; i++) {
             colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
@@ -303,6 +413,37 @@ $(document).ready(function() {
       }
       incomeTagsChart = new Chart(ctx5, {
       type: 'doughnut',
+      options:{
+            onClick: function(evt) {
+                  console.log('click event!')
+                  var activePoints = this.getElementsAtEvent(evt);
+                  if (activePoints[0]) {
+                    var chartData = activePoints[0]['_chart'].config.data;
+                    var idx = activePoints[0]['_index'];
+
+                    var label = chartData.labels[idx];
+                    var value = chartData.datasets[0].data[idx];
+
+
+                  }
+
+                  $.ajax({
+                    type: "POST",
+                    url: "/transaction_details/",
+                    data: {'name': 'tag',
+                            'value':label
+                            },
+                    dataType: 'json',
+
+                    success: function() {
+                     console.log('success for transaction details');
+                     window.location.href = "/display_transaction_details/";
+                  },
+
+                });
+
+                }
+          },
       data:{
       labels: results['income_tag_labels'],
       datasets: [

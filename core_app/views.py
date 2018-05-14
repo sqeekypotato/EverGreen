@@ -300,6 +300,50 @@ def get_tag(request):
 
         return JsonResponse(result)
 
+def display_transaction_details(request):
+    if request.user.is_authenticated:
+        print('transactions details!')
+        myTransactions = Transaction.objects.filter(user=request.user).all()
+        monthNum = int(request.session['monthNum'])
+        for key, value in request.session['transaction_details'].items():
+            if key == 'all': #this key would be used for the main income chart
+                if monthNum != 0:
+                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthNum=monthNum) #this should have the day attached
+                elif request.session['year'] != 'All':
+                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthNum=int(value))
+                else:
+                    myTransactions = myTransactions.filter(year=int(value))
+            elif key == 'category':
+                if monthNum != 0:
+                    myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
+                                                                category=value, monthNum=monthNum).all()
+                elif request.session['year'] != 'All':
+                    myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
+                                                                category=value).all()
+                else:
+                    myTransactions = Transaction.objects.filter(user=request.user, category=value).all()
+            elif key == 'tag':
+                if monthNum != 0:
+                    myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
+                                                                tag=value, monthNum=monthNum).all()
+                elif request.session['year'] != 'All':
+                    myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
+                                                                tag=value).all()
+                else:
+                    myTransactions = Transaction.objects.filter(user=request.user, tag=value).all()
+
+        df = read_frame(myTransactions)
+        df = prepareDataFrame(df)
+        df = df[['date', 'description', 'credit', 'debit', 'category', 'tag','account', 'id', 'exclude_value']]
+        df = df.values.tolist()
+        template = loader.get_template('core_app/transaction_details.html')
+
+        context = {'results':df}
+
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
+
 # ________________Chart Ajax request _______________________________
 
 def get_months(request):
@@ -333,9 +377,11 @@ def new_chart_data(request):
        if request._post['name'] == 'years':
            if request._post['value'] == 'All':
                request.session['year'] = request._post['value']
+               request.session['monthNum'] = 0
                myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
                result = transaction_processing(myTransactions, 'year') #this is added to change the title of the charts
                result['session_title'] = 'All Years'
+
                return JsonResponse(result)
            else:
                request.session['year'] = request._post['value']
@@ -362,14 +408,14 @@ def new_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
         if request.session['year'] == 'All':
-            tags = Transaction.objects.filter(user=request.user, category=request_cat,).all()
+            tags = Transaction.objects.filter(user=request.user, category=request_cat, exclude_value=False).all()
         elif request.session['monthNum'] == '0':
             tags = Transaction.objects.filter(user=request.user, category=request_cat, year=int(request.session['year']),
-                                              ).all()
+                                              exclude_value=False).all()
         else:
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
-                                              year=int(request.session['year']),monthNum = int(request.session['monthNum'])
-                                              ).all()
+                                              year=int(request.session['year']),monthNum = int(request.session['monthNum']),
+                                              exclude_value=False).all()
 
 
         df = read_frame(tags)
@@ -396,16 +442,15 @@ def new_income_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
         if request.session['year'] == 'All':
-            tags = Transaction.objects.filter(user=request.user, category=request_cat, ).all()
+            tags = Transaction.objects.filter(user=request.user, category=request_cat,exclude_value=False ).all()
         elif request.session['monthNum'] == '0':
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
-                                              year=int(request.session['year']),
-                                              ).all()
+                                              year=int(request.session['year']),exclude_value=False).all()
         else:
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
                                               year=int(request.session['year']),
-                                              monthNum=int(request.session['monthNum'])
-                                              ).all()
+                                              monthNum=int(request.session['monthNum']),
+                                              exclude_value=False).all()
 
         df = read_frame(tags)
         df = prepareDataFrame(df)
@@ -465,6 +510,16 @@ def update_cat_dropdown(request):
             'credit': credit_labels,
         }
         return JsonResponse(results, safe=False)
+
+def transaction_details(request):
+    if request.user.is_authenticated:
+        category = request._post['name']
+        value = request._post['value']
+        request.session['transaction_details'] = {category:value}
+        print('{} with {}'.format(category, value))
+        results = {'response':'response'}
+        return JsonResponse(results, safe=False)
+
 
 # _____________________ Class Views ___________________________
 
