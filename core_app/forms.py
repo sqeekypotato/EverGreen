@@ -54,6 +54,7 @@ class YearForm(forms.Form):
         years = kwargs.pop('years')
         super(YearForm, self).__init__(*args, **kwargs)
         self.fields['years'].choices = years
+        self.fields['years'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class MonthForm(forms.Form):
     monthNum = forms.ChoiceField(choices=[])
@@ -62,6 +63,7 @@ class MonthForm(forms.Form):
         monthNum = kwargs.pop('monthNum')
         super(MonthForm, self).__init__(*args, **kwargs)
         self.fields['monthNum'].choices = monthNum
+        self.fields['monthNum'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class UploadToExistingAccount(forms.Form):
     file = forms.FileField()
@@ -79,6 +81,7 @@ class CategorySelection(forms.Form):
         categories = kwargs.pop('categories')
         super(CategorySelection, self).__init__(*args, **kwargs)
         self.fields['categories'].choices = categories
+        self.fields['categories'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class IncomeCategorySelection(forms.Form):
     income_categories = forms.ChoiceField(choices=[])
@@ -87,3 +90,4 @@ class IncomeCategorySelection(forms.Form):
         income_categories = kwargs.pop('income_categories')
         super(IncomeCategorySelection, self).__init__(*args, **kwargs)
         self.fields['income_categories'].choices = income_categories
+        self.fields['income_categories'].widget.attrs['class'] = 'form-control form-control-sm'

@@ -1,42 +1,55 @@
 {% extends "core_app/layout.html" %}
 {% block content %}
 {% load staticfiles%}
+
 <div class="container">
     <h2>Details</h2>
     <p>Here are the results you requested.  Click the button beside the row to edit the values</p>
-    <table class="tabe table-striped">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Discription</th>
-            <th>Credit</th>
-            <th>Debit</th>
-            <th>Category</th>
-            <th>Tag</th>
-            <th>Account</th>
-            <th>Exclude Value</th>
-            <th>Edit</th>
-        </tr>
-
-        </thead>
-        {% for row in results %}
-        <tr>
-            <th><p>{{ row.0 }}</p></th>
-            <th><p>{{ row.1 }}</p></th>
-            <th><p>{{ row.2 }}</p></th>
-            <th><p>{{ row.3 }}</p></th>
-            <th><p>{{ row.4 }}</p></th>
-            <th><p>{{ row.5 }}</p></th>
-            <th><p>{{ row.6 }}</p></th>
-            <th><p>{{ row.8 }}</p></th>
-            <th><a href="/transaction-detail/{{ row.7 }}/" class="btn btn-info" role="button">Edit Values</a></th>
-        </tr>
-        {% endfor %}
-    </table>
-
-
+    <div class="card-header">
+          <i class="fa fa-table"></i> Transaction List</div>
+    <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+              <thead>
+                <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
+                    <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
+                    <th rowspan="1" colspan="1">Edit</th></tr>
+              </thead>
+              <tfoot>
+                <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
+                    <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
+                    <th rowspan="1" colspan="1">Edit</th></tr>
+              </tfoot>
+              <tbody>
+          {% for row in results %}
+              <tr role="row" class="odd">
+                  <td class="sorting_1">{{ row.0 }}</td>
+                  <td>{{ row.1 }}</td>
+                  <td>{{ row.2 }}</td>
+                  <td>{{ row.3 }}</td>
+                  <td>{{ row.4 }}</td>
+                  <td>{{ row.5 }}</td>
+                  <td>{{ row.6 }}</td>
+                  <td>{{ row.8 }}</td>
+                  <td><a href="/transaction-detail/{{ row.7 }}/" class="btn btn-info" role="button">Edit Values</a></td>
+                </tr>
+          {% endfor %}
+              </tbody>
+            </table>
+          </div>
+    </div>
+    <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
 </div>
 
 
+        <!-- Page level plugin JavaScript-->
+    <script src="{% static 'core_app/vendor/chart.js/Chart.min.js' %}"></script>
+    <script src="{% static 'core_app/vendor/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'core_app/vendor/datatables/dataTables.bootstrap4.js' %}"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="{% static 'core_app/js/sb-admin.min.js' %}"></script>
+    <!-- Custom scripts for this page-->
+    <script src="{% static 'core_app/js/sb-admin-datatables.min.js' %}"></script>
+    <script src="{% static 'core_app/js/sb-admin-charts.min.js' %}"></script>
 
 {% endblock %}

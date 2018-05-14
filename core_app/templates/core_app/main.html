@@ -1,131 +1,127 @@
 
 {% extends "core_app/layout.html" %}
-{% block content %}
 {% load staticfiles%}
+{% block content %}
+
 <script src="{% static 'core_app/my_charts.js' %}"></script>
-<div class="row">
-
- <div class="col-sm-2">
-            <div class="sidenav">
-                {% csrf_token %}
-                {{ yearForm.as_p }}
-                <div id="month_form">{% csrf_token %}{{ monthForm.as_p }}</div>
-               {% csrf_token %}
-                {{ catForm.as_p }}
-                {% csrf_token %}
-                {{ incomeCatForm.as_p }}
-            </div>
- </div>
-    <div class="col-sm-10">
-        <div class="card">
-            <div class="card-body">
-                <!--balance chart-->
-                <h3>Overall Income and Spending for <b class="session_title">{{ year_title }}</b></h3>
-                <div class="chart_container">
-                <canvas id="balanceChart" width="400" height="125"></canvas>
-
-                </div>
-            </div>
+      <!-- Area Chart Example-->
+      <div class="card mb-3">
+        <div class="card-header">
+          <i class="fa fa-area-chart"></i> Overall Income and Spending for <b class="session_title">{{ year_title }}</b></div>
+        <div class="card-body">
+          <canvas id="balanceChart" width="100%" height="30"></canvas>
         </div>
+        <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+      </div>
 
-        <div class="card">
+
+      <div class="row">
+        <div class="col-lg-8">
+          <!-- Example Bar Chart Card-->
+          <div class="card mb-3">
+            <div class="card-header">
+              <i class="fa fa-bar-chart"></i> Income Chart</div>
             <div class="card-body">
-                <div class="row">
-
-                    <div class="col-sm-6">
-                        <!--spending cats-->
-                        <h4>Spending Categories <b class="session_title">{{ year_title }}</b></h4>
-                        <div class="chart_container">
-                        <canvas id="categoryChart"></canvas>
-
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <!--income cats-->
-                        <h4>Income Categories <b class="session_title">{{ year_title }}</b></h4>
-                        <div class="chart_container">
-                        <canvas id="incomeChart"></canvas>
-                        </div>
-                    </div>
+              <div class="row">
+                <div class="col-sm-8 my-auto">
+                  <canvas id="myBarChart" width="100" height="50"></canvas>
                 </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <!--spending tags-->
-                        <div class="chart_container" id="tagContainer">
-                            <h4>Spending Tags</h4>
-                            <div class="chart_container">
-                                <canvas id="tagChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <!--income tags-->
-                        <div class="chart_container" id="income_tag_container">
-                        <h4>Income Categories</h4>
-                        <div class="chart_container">
-                        <canvas id="incomeTags"></canvas>
-                        </div>
-                        </div>
-                    </div>
+                <div class="col-sm-4 text-center my-auto">
+                  <div class="h4 mb-0 text-primary">$34,693</div>
+                  <div class="small text-muted">YTD Revenue</div>
+                  <hr>
+                  <div class="h4 mb-0 text-warning">$18,474</div>
+                  <div class="small text-muted">YTD Expenses</div>
+                  <hr>
+                  <div class="h4 mb-0 text-success">$16,219</div>
+                  <div class="small text-muted">YTD Margin</div>
                 </div>
+              </div>
             </div>
-        </div>
-
-        <div class="row">
+            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+          </div>
+          <!-- Card Columns Example Social Feed-->
+          <div class="mb-0 mt-4">
+            <i class="fa fa-newspaper-o"></i> Tag Comparisons</div>
+          <hr class="mt-2">
+          <div class="card-columns">
+            <!-- Comparison Card-->
             {% for key, value in comparison_list.items %}
-            <div class="col-sm-6">
-            <div class="card">
-                <div class="card-body">
-
-                    <h5 class="card-title">For the Category of <b>{{ value.category }}</b> and with the Tag <b>{{ value.tag }}</b></h5>
-
+            <div class="card mb-3">
+              <div class="card-body">
+                <h6 class="card-title mb-1"><b>{{ value.category }} - {{ value.tag }} </b></h6>
+                <p class="card-text small">
                     {% if value.value.last_month.debit %}
-                    <p>Last month you spent {{ value.value.last_month.debit }} on {{ value.tag }}</p>
+                    Last month you spent {{ value.value.last_month.debit }} on {{ value.tag }}
                     {% endif %}
                     {% if value.value.last_month.credit %}
-                    <p>Your {{ value.tag }} earnings last month was {{ value.value.last_month.credit }}</p>
+                    Your {{ value.tag }} earnings last month was {{ value.value.last_month.credit }}
                     {% endif %}
 
                     {% if value.value.last_year_month.debit %}
-                    <p>In the same month last year you spent {{ value.value.last_year_month.debit }} on  {{ value.tag }}</p>
+                    In the same month last year you spent {{ value.value.last_year_month.debit }} on  {{ value.tag }}
                     {% endif %}
                     {% if value.value.last_year_month.credit %}
-                    <p>In the same month last year, you earned {{ value.value.last_year_month.credit }}</p>
+                    In the same month last year, you earned {{ value.value.last_year_month.credit }}
                     {% endif %}
 
                     {% if value.value.ytd.debit %}
-                    <p>This year to date you have spent {{ value.value.ytd.debit }} on {{ value.tag }}</p>
+                   This year to date you have spent {{ value.value.ytd.debit }} on {{ value.tag }}
                     {% endif %}
                     {% if value.value.ytd.credit %}
-                    <p> This year to date you have earned {{ value.value.ytd.credit }} on {{ value.tag }}</p>
+                    This year to date you have earned {{ value.value.ytd.credit }} on {{ value.tag }}
                     {% endif %}
 
                     {% if value.value.last_ytd.debit %}
-                    <p>Last year at this time you had spent {{ value.value.last_ytd.debit }} on {{ value.tag }}</p>
+                    Last year at this time you had spent {{ value.value.last_ytd.debit }} on {{ value.tag }}
                     {% endif %}
                     {% if value.value.last_ytd.credit %}
-                    <p>Last year you earned {{ value.value.last_ytd.credit }} on {{ value.tag }}</p>
+                    Last year you earned {{ value.value.last_ytd.credit }} on {{ value.tag }}
                     {% endif %}
-
-
-                </div>
-            </div>
+                </p>
+              </div>
             </div>
             {% endfor %}
+
+          </div>
+          <!-- /Card Columns-->
         </div>
-</div>
-</div>
+        <div class="col-lg-4">
+          <!-- Example Pie Chart Card-->
+          <div class="card mb-3">
+            <div class="card-header">
+              <i class="fa fa-pie-chart"></i>Spending Categories <b class="session_title">{{ year_title }}</b></div>
+            <div class="card-body">
+              <canvas id="categoryChart" width="100%" height="100"></canvas>
+                <div class="chart_container" id="tagContainer">
+                    <h4>Spending Tags</h4>
+                    <div class="chart_container">
+                        <canvas id="tagChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+          </div>
+
+          <!-- Example Pie Chart Card-->
+          <div class="card mb-3">
+            <div class="card-header">
+              <i class="fa fa-pie-chart"></i>Income Categories <b class="session_title">{{ year_title }}</b></div>
+            <div class="card-body">
+              <canvas id="incomeChart" width="100%" height="100"></canvas>
+                <div class="chart_container" id="income_tag_container">
+                  <h4>Income Categories</h4>
+                  <div class="chart_container">
+                  <canvas id="incomeTags"></canvas>
+                  </div>
+                </div>
+            </div>
+            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
 {% endblock %}
-
-
-
-
-
-
-
-

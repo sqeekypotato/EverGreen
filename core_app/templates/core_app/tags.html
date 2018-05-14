@@ -4,16 +4,19 @@
 <script src="{% static 'core_app/custom.js' %}"></script>
 
 <datalist id="cats">
-
-{% for value in category %}
+    {% for value in category %}
     <option value= "{{ value }}" >
-{% endfor %}
+    {% endfor %}
 </datalist>
 
 <div>
 <form action="" method="post" id="transTags">
     {% csrf_token %}
-    <table width="100%">
+    <div class="card-header">
+      <i class="fa fa-table"></i> There are {{ num_of_blank_trans }} of records that do not have tags</div>
+    <div class="card-body">
+        <div class="table-responsive">
+      <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
         <th> Date </th> <th> Description </th><th>Income</th><th>Debit</th><th>Category</th><th>Tag</th>
     {% for item in tableList %}
         <tr>
@@ -28,23 +31,27 @@
         </tr>
     {% endfor %}
     </table>
+    </div>
     <div class="row">
         <h5>Create a Rule to apply!</h5>
 
-        <select name="user_rule_detail">
+        <select name="user_rule_detail" >
             <option value="">Select an option</option>
             <option value="begins_with">Begins with</option>
             <option value="ends_with">Ends with</option>
         </select>
-        <input type="text" name="user_rule_description">
-        <input type="text" name="user_rule_category">
-        <input type="text" name="user_rule_tag">
+        <input type="text" name="user_rule_description" placeholder="Description">
+        <input type="text" name="user_rule_category" placeholder="Choose Category">
+        <input type="text" name="user_rule_tag" placeholder="Choose Tag">
     </div>
     <input type="submit" />
-</form>
-    <div class="row">
-        <p>There are {{ num_of_blank_trans }} of records that do not have tags</p>
+
     </div>
+
+
+
+</form>
+
 
 </div>
 
