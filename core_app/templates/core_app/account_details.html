@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>New Account</title>
-</head>
-<body>
-      <h2 style = "text-align: center;">Contact Form</h2>
+{% extends "core_app/layout.html" %}
+{% block content %}
+{% load staticfiles%}
+
+<div class="card-header">
+    <i class="fa fa-table"></i>  <b>Please identify which columns have the following information</b></div>
+  <div class="card-body">
 
       {% for message in form.name.errors %}
        <div>{{ message }}</div>
@@ -23,33 +22,67 @@
             {{ form.non_form_errors }}
          <fieldset>
             <legend>Account Details Form</legend>
-
+              <div class="row">
+                <div class="col-sm-4">
                {{ form.name.label }}
                {{ form.name }}
-
+                </div>
+                <div class="col-sm-4">
                {{ form.balance.label }}
                {{ form.balance }}
-
+                </div>
+                <div class="col-sm-4">
+                {{ form.rows.label }}
+                {{ form.rows }}
+                </div>
+              </div>
+              <div class="row">
+                  <div class="col-sm-3">
                {{ form.credit.label }}
                {{ form.credit }}
-
+                  </div>
+                  <div class="col-sm-3">
                {{ form.debit.label }}
                {{ form.debit }}
-
+                  </div>
+                  <div class="col-sm-3">
                {{ form.date.label }}
                {{ form.date }}
-
-               {{ form.rows.label }}
-               {{ form.rows }}
-
+                  </div>
+                  <div class="col-sm-3">
                {{ form.description.label }}
                {{ form.description }}
+                  </div>
 
-               <button type="submit">Submit</button>
+              </div>
+             <div class="row buffer">
+                <div class="col-md-12 text-center"> <button class="btn btn-default" type="submit">Submit</button></div>
+             </div>
+
+
          </fieldset>
       </form>
 
-      {{ html|safe }}
+      <div class="table-responsive">
+      <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+                {% for item in headers%}
+                <th rowspan="1" colspan="1">Column {{ item }}</th>
+                {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
 
-</body>
-</html>
+          </tbody>
+          {% for item in df %}
+            <tr role="row" class="odd">
+                {% for i in item %}
+                <td class="sorting_1">{{ i }}</td>
+                {% endfor %}
+            </tr>
+          {% endfor %}
+      </table>
+      </div>
+  </div>
+{% endblock %}

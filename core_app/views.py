@@ -9,14 +9,14 @@ from django.core.mail import EmailMessage
 from django.views.generic import View
 from django_pandas.io import read_frame
 from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
+
 
 import pandas as pd
 import threading
 
 from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm,\
     CategorySelection, IncomeCategorySelection
-from core_app.models import BankAccounts, Transaction
+from core_app.models import BankAccounts, Transaction, UserRule
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
     prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule
@@ -25,6 +25,7 @@ from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prep
 from .models import Transaction, Tags, UniversalTags
 
 # _______________________main pages ________________________________________
+# landing page
 def home(request):
     message = 'Hello and welcome to Evergreen Financial!'
     template = loader.get_template('core_app/index.html')
@@ -35,6 +36,7 @@ def home(request):
     }
     return HttpResponse(template.render(context, request))
 
+# page where charts are displayed
 def main_page(request):
 
     if request.user.is_authenticated:
@@ -97,6 +99,7 @@ def main_page(request):
     else:
         return redirect('home')
 
+# create a new bank account
 def newAccount(request):
     if request.user.is_authenticated:
         if request.method == 'POST':
@@ -117,7 +120,7 @@ def account_details(request):
         dataframe = pd.read_json(dataframe)
         dataframe = dataframe.reset_index(drop=True)
         df = dataframe.head(10).values.tolist()
-        html = dataframe.head(10).to_html()
+        mydf = dataframe.head(10).columns.values.tolist()
 
         # this is done to populate the dropdown menu for the forms
         tempCol = range(0, len(df[0]))
@@ -166,8 +169,8 @@ def account_details(request):
         template = loader.get_template('core_app/account_details.html')
         context = {
             'form':form,
-            'df':df,
-            'html':html
+            'headers':mydf,
+            'df':df
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -212,6 +215,7 @@ def upload_transactions(request):
     else:
         return redirect('home')
 
+# adds tags and categories to transactions based on user input
 def tags(request):
     if request.user.is_authenticated:
         if request.method == "POST":
@@ -280,26 +284,7 @@ def tags(request):
         }
         return HttpResponse(template.render(context, request))
 
-def get_tag(request):
-    if request.user.is_authenticated:
-        category = request._post['category']
-        number = request._post['number']
-        number = number.replace('cat', '#tag_option')
-
-        userTagsQuery = Tags.objects.filter(category=category)
-        uniTagQuery = UniversalTags.objects.filter(category=category)
-        temp_list = []
-        for item in userTagsQuery:
-            if item.tag not in temp_list:
-                temp_list.append(item.tag)
-        for item in uniTagQuery:
-            if item.tag not in temp_list:
-                temp_list.append(item.tag)
-        temp_list.sort()
-        result = {'tags': temp_list, 'number':number}
-
-        return JsonResponse(result)
-
+# displays the list of transactions depending on what was clicked on the charts
 def display_transaction_details(request):
     if request.user.is_authenticated:
         print('transactions details!')
@@ -344,8 +329,56 @@ def display_transaction_details(request):
     else:
         return redirect('home')
 
-# ________________Chart Ajax request _______________________________
+# lists tags and categories for editing
+def update_tags(request):
+    if request.user.is_authenticated:
+        my_tags = Tags.objects.filter(user=request.user).all()
+        df = read_frame(my_tags)
+        df = df[['category', 'tag', 'drill_down', 'id']]
+        df = df.values.tolist()
+        template = loader.get_template('core_app/tag_details.html')
+        context = {'results':df}
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
 
+# lists tags and categories for editing
+def update_rules(request):
+    if request.user.is_authenticated:
+        my_tags = UserRule.objects.filter(user=request.user).all()
+        df = read_frame(my_tags)
+        df = df[['begins_with', 'ends_with', 'description', 'category', 'tag', 'id']]
+        df = df.values.tolist()
+        template = loader.get_template('core_app/rule_details.html')
+        context = {'results': df}
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
+
+# ________________Ajax requests _______________________________
+
+# gets tags for dropdown
+def get_tag(request):
+    if request.user.is_authenticated:
+        category = request._post['category']
+        number = request._post['number']
+        number = number.replace('cat', '#tag_option')
+
+        userTagsQuery = Tags.objects.filter(category=category)
+        uniTagQuery = UniversalTags.objects.filter(category=category)
+        temp_list = []
+        for item in userTagsQuery:
+            if item.tag not in temp_list:
+                temp_list.append(item.tag)
+        for item in uniTagQuery:
+            if item.tag not in temp_list:
+                temp_list.append(item.tag)
+        temp_list.sort()
+        result = {'tags': temp_list, 'number':number}
+
+        return JsonResponse(result)
+
+# gets months for dropdown
 def get_months(request):
     if request.user.is_authenticated:
         request_year = request._post['year']
@@ -358,12 +391,14 @@ def get_months(request):
             month_list.append(month)
         return JsonResponse(month_list, safe=False)
 
+# this isn't an api, it is just here so it was easy to find
 def transaction_processing(myTransactions, my_interval):
     df = read_frame(myTransactions)
     df = prepareDataFrame(df)
     result = prepare_table(df, my_interval)
     return result
 
+# gets info for the first chart that is displayed
 def first_chart(request):
     if request.user.is_authenticated:
         myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
@@ -372,6 +407,7 @@ def first_chart(request):
         request.session['monthNum'] = '0'
         return JsonResponse(result, safe=False)
 
+# gets chart info when a dropdown is changed
 def new_chart_data(request):
     if request.user.is_authenticated:
        if request._post['name'] == 'years':
@@ -404,6 +440,7 @@ def new_chart_data(request):
                result['session_title'] = '{} {}'.format(request.session['monthNum'], request.session['year']) #this is added to change the title of the charts
                return JsonResponse(result)
 
+# get information for when a specific tag is requested
 def new_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
@@ -438,6 +475,7 @@ def new_tag_data(request):
         }
         return JsonResponse(results, safe=False)
 
+# gets information for when a specific income tag is requested
 def new_income_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
@@ -471,6 +509,7 @@ def new_income_tag_data(request):
         }
         return JsonResponse(results, safe=False)
 
+# updates the category dropdown on the chart page
 def update_cat_dropdown(request):
     if request.user.is_authenticated:
         year = request.session['year']
@@ -511,6 +550,7 @@ def update_cat_dropdown(request):
         }
         return JsonResponse(results, safe=False)
 
+# adds the category and value to request.session['transaction_details'] for use elsewhere.  The response isn't used
 def transaction_details(request):
     if request.user.is_authenticated:
         category = request._post['name']
@@ -523,11 +563,22 @@ def transaction_details(request):
 
 # _____________________ Class Views ___________________________
 
+# for updating a transaction record
 class TransactionUpdate(UpdateView):
     model = Transaction
     fields = ['date', 'description', 'credit', 'debit', 'category', 'tag', 'account', 'exclude_value']
     success_url = '/main_page/'
 
+# for updateing tags and categories
+class TagsUpdate(UpdateView):
+    model = Tags
+    fields = ['category', 'tag', 'drill_down']
+    success_url = '/update_tags/'
+
+# for updating user rules
+class RuleUpdate(UpdateView):
+    model = UserRule
+    fields = ['begins_with', 'ends_with', 'description', 'tag', 'category']
 
 # __________________Generic Pages______________________________
 def signup(request):

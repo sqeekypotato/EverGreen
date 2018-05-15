@@ -6,19 +6,17 @@
     <h2>Details</h2>
     <p>Here are the results you requested.  Click the button beside the row to edit the values</p>
     <div class="card-header">
-          <i class="fa fa-table"></i> Transaction List</div>
+          <i class="fa fa-table"></i> Rule List</div>
     <div class="card-body">
           <div class="table-responsive">
             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
               <thead>
-                <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
-                    <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
-                    <th rowspan="1" colspan="1">Edit</th></tr>
+                <tr><th rowspan="1" colspan="1">Begins With</th><th rowspan="1" colspan="1">Ends With</th><th rowspan="1" colspan="1">Description</th><th rowspan="1" colspan="1">Category</th>
+                <th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Edit Rule</th><th rowspan="1" colspan="1">Delete Rule</th></tr>
               </thead>
               <tfoot>
-                <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
-                    <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
-                    <th rowspan="1" colspan="1">Edit</th></tr>
+                <tr><th rowspan="1" colspan="1">Begins With</th><th rowspan="1" colspan="1">Ends With</th><th rowspan="1" colspan="1">Description</th><th rowspan="1" colspan="1">Category</th>
+                <th rowspan="1" colspan="1">Tag</th></tr>
               </tfoot>
               <tbody>
           {% for row in results %}
@@ -28,10 +26,8 @@
                   <td>{{ row.2 }}</td>
                   <td>{{ row.3 }}</td>
                   <td>{{ row.4 }}</td>
-                  <td>{{ row.5 }}</td>
-                  <td>{{ row.6 }}</td>
-                  <td>{{ row.8 }}</td>
-                  <td><a href="/transaction-detail/{{ row.7 }}/" class="btn btn-info" role="button">Edit Values</a></td>
+                  <td><a href="/rule-detail/{{ row.5 }}/" class="btn btn-info" role="button">Edit</a></td>
+                  <td><a href="/rule-detail/{{ row.5 }}/" class="btn btn-info" role="button">Delete</a></td>
                 </tr>
           {% endfor %}
               </tbody>

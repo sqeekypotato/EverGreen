@@ -11,7 +11,7 @@
         <div class="card-body">
           <canvas id="balanceChart" width="100%" height="30"></canvas>
         </div>
-        <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+
       </div>
 
 
@@ -38,7 +38,7 @@
                 </div>
               </div>
             </div>
-            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+
           </div>
           <!-- Card Columns Example Social Feed-->
           <div class="mb-0 mt-4">
@@ -52,24 +52,24 @@
                 <h6 class="card-title mb-1"><b>{{ value.category }} - {{ value.tag }} </b></h6>
                 <p class="card-text small">
                     {% if value.value.last_month.debit %}
-                    Last month you spent {{ value.value.last_month.debit }} on {{ value.tag }}
+                    Last month you spent {{ value.value.last_month.debit }} on {{ value.tag }}.
                     {% endif %}
                     {% if value.value.last_month.credit %}
-                    Your {{ value.tag }} earnings last month was {{ value.value.last_month.credit }}
+                    Your {{ value.tag }} earnings last month was {{ value.value.last_month.credit }}.
                     {% endif %}
 
                     {% if value.value.last_year_month.debit %}
-                    In the same month last year you spent {{ value.value.last_year_month.debit }} on  {{ value.tag }}
+                    In the same month last year you spent {{ value.value.last_year_month.debit }} on  {{ value.tag }}.
                     {% endif %}
                     {% if value.value.last_year_month.credit %}
-                    In the same month last year, you earned {{ value.value.last_year_month.credit }}
+                    In the same month last year, you earned {{ value.value.last_year_month.credit }}.
                     {% endif %}
 
                     {% if value.value.ytd.debit %}
-                   This year to date you have spent {{ value.value.ytd.debit }} on {{ value.tag }}
+                   This year to date you have spent {{ value.value.ytd.debit }} on {{ value.tag }}.
                     {% endif %}
                     {% if value.value.ytd.credit %}
-                    This year to date you have earned {{ value.value.ytd.credit }} on {{ value.tag }}
+                    This year to date you have earned {{ value.value.ytd.credit }} on {{ value.tag }}.
                     {% endif %}
 
                     {% if value.value.last_ytd.debit %}
@@ -100,7 +100,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+
           </div>
 
           <!-- Example Pie Chart Card-->
@@ -116,9 +116,7 @@
                   </div>
                 </div>
             </div>
-            <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
           </div>
-
         </div>
       </div>
 

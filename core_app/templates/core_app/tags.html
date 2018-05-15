@@ -32,19 +32,22 @@
     {% endfor %}
     </table>
     </div>
-    <div class="row">
-        <h5>Create a Rule to apply!</h5>
 
-        <select name="user_rule_detail" >
-            <option value="">Select an option</option>
-            <option value="begins_with">Begins with</option>
-            <option value="ends_with">Ends with</option>
-        </select>
-        <input type="text" name="user_rule_description" placeholder="Description">
-        <input type="text" name="user_rule_category" placeholder="Choose Category">
-        <input type="text" name="user_rule_tag" placeholder="Choose Tag">
-    </div>
-    <input type="submit" />
+        <h5>Create a Rule to apply!</h5>
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <select name="user_rule_detail" class="form-control" >
+                    <option value="">Select an option</option>
+                    <option value="begins_with">Begins with</option>
+                    <option value="ends_with">Ends with</option>
+                </select>
+            </div>
+            <div class="col-sm-3"><input type="text" name="user_rule_description" placeholder="Description" class="form-control"></div>
+            <div class="col-sm-3"> <input type="text" name="user_rule_category" placeholder="Category" class="form-control"></div>
+            <div class="col-sm-3"><input type="text" name="user_rule_tag" placeholder="Tag" class="form-control"></div>
+        </div>
+
+    <input class="btn btn-default" type="submit" />
 
     </div>
 

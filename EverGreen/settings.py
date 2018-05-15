@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.core.mail',
+    'widget_tweaks',
     # 'core_app.apps.CoreAppConfig',
     'core_app',
 ]

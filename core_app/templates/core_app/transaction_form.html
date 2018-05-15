@@ -1,8 +1,30 @@
 {% extends "core_app/layout.html" %}
 {% block content %}
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_table }}
-    <button type="submit">Submit</button>
-  </form>
+
+<body class="bg-dark">
+  <div class="container">
+    <div class="card mx-auto mt-6">
+      <div class="card-header">Edit Transaction Values</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% load widget_tweaks %}
+          <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+          <tr><td>Date</td><td>{{ form.date|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Description</td><td>{{ form.description|add_class:'form-control form-control-sm'  }}</td></tr>
+          <tr><td>Credit</td><td>{{ form.credit|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Debit</td><td>{{ form.debit|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Category</td><td>{{ form.category|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Tag</td><td>{{ form.tag|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Account</td><td>{{ form.account|add_class:'form-control form-control-sm' }}</td></tr>
+          <tr><td>Exclude Value?</td><td>{{ form.exclude_value|add_class:'form-control form-control-sm' }}</td></tr>
+            </table>
+          </div>
+          <button class="btn btn-default" type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
 {% endblock %}

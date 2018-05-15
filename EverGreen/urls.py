@@ -38,6 +38,10 @@ urlpatterns = [
     url(r'^upload_transactions/$', views.upload_transactions, name='upload_transactions'),
     # display_transaction_details
     url(r'^display_transaction_details/$', views.display_transaction_details, name='display_transaction_details'),
+    # display_tag_details
+    url(r'^update_tags/$', views.update_tags, name='update_tags'),
+    # display_rule_details
+    url(r'^update_rules/$', views.update_rules, name='update_rules'),
     # tags
     url(r'^tags/$', views.tags, name='tags'),
     # get_tags
@@ -50,6 +54,7 @@ urlpatterns = [
     url(r'^logout/$', auth_views.logout, {'template_name': 'core_app/logout.html'}, name='logout'),
     # contact form
     url(r'^contact/$', views.contact, name='contact'),
+
     # api
     url(r'^new_chart_data/$', views.new_chart_data, name='new_chart_data'),
     url(r'^first_charts/$', views.first_chart, name='first_charts'),
@@ -58,8 +63,12 @@ urlpatterns = [
     url(r'^new_income_tag_data/$', views.new_income_tag_data, name='new_income_tag_data'),
     url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
     url(r'^transaction_details/$', views.transaction_details, name='transaction_details'),
+
     # class views
     path('transaction-detail/<int:pk>/', views.TransactionUpdate.as_view(), name='transaction-update'),
+    path('tag-detail/<int:pk>/', views.TagsUpdate.as_view(), name='tags-update'),
+    path('rule-detail/<int:pk>/', views.RuleUpdate.as_view(), name='rules-update'),
+
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
     # # # password_change

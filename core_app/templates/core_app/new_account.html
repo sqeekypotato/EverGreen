@@ -1,10 +1,22 @@
 {% extends "core_app/layout.html" %}
 {% block content %}
 
-<form action="/new_account/" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="file" name="file">
-    <button type="submit">Upload</button>
-</form>
+<body class="bg-dark">
+  <div class="container">
+    <div class="card card-login mx-auto mt-5">
+      <div class="card-header">Select a file</div>
+      <div class="card-body">
 
+        <form action="/new_account/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" class="form-control" name="file">
+            <p>Please select a file that the new account will be started with.  In the next step, you will be asked
+            to "calibrate" the account.  Don't worry.  This only needs to happen once!  We suggest that you make sure that
+            the account has a unique name but that is up to you.</p>
+            <button class="btn btn-default" type="submit">Upload</button>
+        </form>
+
+      </div>
+    </div>
+  </div>
 {% endblock %}

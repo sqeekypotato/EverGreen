@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.forms import ModelForm
 
 from .models import Transaction
 
@@ -17,8 +18,6 @@ class UserForm(forms.ModelForm):
     state_province = forms.CharField()
     number_of_people = forms.IntegerField()
 
-
-
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'country', 'state_province', 'number_of_people']
@@ -32,20 +31,32 @@ class AccountSelectForm(forms.Form):
     ]
 
     name = forms.CharField(label='Account Name' ,required=True)
+    name.widget.attrs['class'] = 'form-control form-control-sm'
     balance = forms.DecimalField(label='Balance of Account' ,required=True)
+    balance.widget.attrs['class'] = 'form-control form-control-sm'
     date = forms.ChoiceField(choices=CHOICES)
+    date.label = "What column has the transaction's dates?"
     debit = forms.ChoiceField(choices=CHOICES)
+    debit.label = 'What column has your debit values?'
     credit = forms.ChoiceField(choices=CHOICES)
+    credit.label = 'What column has your credit values?'
     rows = forms.ChoiceField(choices=[(0,0),(1,1), (2,2), (3,3), (4,4), (5,5)])
+    rows.widget.attrs['class'] = 'form-control form-control-sm'
+    rows.label = 'What row do the transactions start?'
     description = forms.ChoiceField(choices=CHOICES)
+    description.label = "What column is the description?"
 
     def __init__(self, custom_choices = None, *args):
         super(AccountSelectForm, self).__init__(*args)
         if custom_choices:
             self.fields['date'].choices = custom_choices
+            self.fields['date'].widget.attrs['class'] = 'form-control form-control-sm'
             self.fields['debit'].choices = custom_choices
+            self.fields['debit'].widget.attrs['class'] = 'form-control form-control-sm'
             self.fields['credit'].choices = custom_choices
+            self.fields['credit'].widget.attrs['class'] = 'form-control form-control-sm'
             self.fields['description'].choices = custom_choices
+            self.fields['description'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class YearForm(forms.Form):
     years = forms.ChoiceField(choices=[])
@@ -68,11 +79,13 @@ class MonthForm(forms.Form):
 class UploadToExistingAccount(forms.Form):
     file = forms.FileField()
     accountNames = forms.ChoiceField(choices=[])
+    dupliactes = forms.BooleanField()
 
     def __init__(self, *args, **kwargs):
         accountNames = kwargs.pop('accountNames')
         super(UploadToExistingAccount, self).__init__(*args, **kwargs)
         self.fields['accountNames'].choices = accountNames
+        self.fields['accountNames'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class CategorySelection(forms.Form):
     categories = forms.ChoiceField(choices=[])

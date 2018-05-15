@@ -1,10 +1,26 @@
 {% extends "core_app/layout.html" %}
 {% block content %}
 
-<form action="/upload_transactions/" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Upload</button>
-</form>
+<body class="bg-dark">
+  <div class="container">
+    <div class="card card-login mx-auto mt-5">
+      <div class="card-header">Select a file</div>
+      <div class="card-body">
 
+        <form action="/upload_transactions/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <h6>Please select a file you wish to add</h6>
+            {{ form.file }}
+            <h6>Select an account that these transactions will be added to</h6>
+            {{ form.accountNames }}
+            <h6>Exclude Duplicates?</h6>
+            {{ form.dupliactes }}
+            <p>Please select a file that you wish to add and then make sure you attach it to the correct account.  The
+            option "exclude duplicates" will check to see if </p>
+            <button class="btn btn-default" type="submit">Upload</button>
+
+        </form>
+       </div>
+    </div>
+  </div>
 {% endblock %}
