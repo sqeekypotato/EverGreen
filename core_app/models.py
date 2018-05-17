@@ -51,7 +51,7 @@ class Tags (models.Model):
     drill_down = models.BooleanField(default=False)
 
     def __str__(self):
-        return '{} - {}'.format(self.category, self.tag)
+        return '{} - {} - {}'.format(self.category, self.tag, self.user)
 
 class UniversalTags (models.Model):
     tag = models.CharField(max_length=50)

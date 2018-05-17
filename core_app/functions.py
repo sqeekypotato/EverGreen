@@ -4,7 +4,7 @@ import calendar
 import datetime
 from django_pandas.io import read_frame
 
-from .models import Transaction, Tags, UniversalTags, UserRule
+from .models import Transaction, Tags, UniversalTags, UserRule, BankAccounts
 
 # takes the file, fixes it and returns a dataframe
 def fixQuotesForCSV(file):
@@ -113,11 +113,18 @@ def prepare_table(df, interval):
     credit_vals = credit_vals.round(2)
     debit_vals = df.groupby([interval])['debit'].sum()
     debit_vals = debit_vals.round(2)
-    monthName = df.groupby([interval])['monthName'].unique().astype(str)
+
+    # getting the correct labels
+    if interval == 'monthNum':
+        tempName = df['monthName'].unique()
+        labels = list(tempName)
+    else:
+        labels = debit_vals.index.tolist()
+        labels = [str(x) for x in labels]
+
     balance_vals = df.groupby([interval])['balance'].median()
     balance_vals = balance_vals.round(2)
-    labels = debit_vals.index.tolist()
-    labels = [str(x) for x in labels]
+
 
     # for category charts
     cat_vals = df.groupby(['category'])['debit'].sum()
@@ -136,7 +143,6 @@ def prepare_table(df, interval):
 
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
-              'monthName':monthName.tolist(),
               'balance':balance_vals.tolist(),
               'labels':labels,
               'cat_labels':cat_labels,
@@ -257,7 +263,7 @@ def check_date(date1, date2):
 # adds tags and looks for transfers the first time a new account is created is uploaded.
 def first_run(**kwargs):
     print('first run!')
-    run_user_rules(kwargs['user'])
+    run_user_rules(kwargs['user']) #runs the user's rules
 
     # looking for transfers ________________________________________________________________________
     transactions = Transaction.objects.filter(user=kwargs['user'], category=None).all()
@@ -274,10 +280,13 @@ def first_run(**kwargs):
     # end of transfer search ___________________________________________________________________________________
 
     # taging matching transactions______________________________________________________________________________
-        for category in cat_list:
-            if item.description == category.description:
-                item.tag = category.tag
-                item.category = category.category
+        for transaction in transactions:
+            print('checking transactions'
+)
+            match = Transaction.objects.filter(user=kwargs['user'], description=transaction.description).exclude(category=None).first()
+            if match:
+                transaction.tag = match.tag
+                transaction.category = match.category
                 item.save()
                 break
 
@@ -295,6 +304,8 @@ def pretteyfy_numbers(number):
         number = str(number)
         dollars, cents = number.split('.')
         cents = cents[:2]
+        if len(cents) == 1:
+            cents = '{}0'.format(cents)
         if len(dollars) > 6:
             part3 = dollars[-3:]
             part2 = dollars[-6:-3]
@@ -399,3 +410,38 @@ def run_user_rules(user):
                 item.save()
                 record_count += 1
     print('Modified {} records using user rules'.format(record_count))
+
+# When uploading a file to an existing account, this finds the last entry for the account based on date and then returns
+# the dataframe that is being uploaded with all dates after that so there are no duplications.  Returns a dataframe
+def check_for_dups(user, account, df):
+
+    the_account = BankAccounts.objects.filter(account_name=account, user=user).first()
+    last_transaction = Transaction.objects.order_by('-date').filter(user=user, account=the_account)[0]
+
+
+    df[the_account.transDateCol] = pd.to_datetime(df[the_account.transDateCol])  # changes string to date format
+    df = df.fillna(0)  # replaces NaN with 0
+
+    df_1 = df[df[the_account.transDateCol] == last_transaction.date]
+    row_num = 0
+    credit_val = float(last_transaction.credit/100)
+    debit_val = float(last_transaction.debit/100)
+
+    merge_df = False
+
+    for index, row in df_1.iterrows():
+        if row[the_account.transDescriptionCol] == last_transaction.description:
+            if row[the_account.transCreditCol] == credit_val:
+                if row[the_account.transDebitCol] == debit_val:
+                    row_num = index + 1
+                    merge_df = True
+    df_1 = df_1.loc[row_num:]
+    df_2 = df[df[the_account.transDateCol] > last_transaction.date]
+
+    if merge_df:
+        return_df = df_1 + df_2
+    else:
+        return_df = df_2
+
+    print('{} rows added to dataframe'.format(return_df.shape[0]))
+    return return_df

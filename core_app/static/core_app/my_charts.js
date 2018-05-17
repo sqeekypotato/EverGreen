@@ -157,11 +157,12 @@ $(document).ready(function() {
             dataType: 'json',
 
             success: function(results){
-               var $el = $("#id_monthNum");
+                var $el = $("#id_monthNum");
                 $el.empty(); // remove old options
-                $.each(results, function(key,value) {
+                $.each(results, function (key, value) {
+                    console.log(value)
                   $el.append($("<option></option>")
-                     .attr("value", key).text(value));
+                     .attr("value", value).text(value));
 
                 });
             }
@@ -481,6 +482,7 @@ $(document).ready(function() {
       }
     });
 }
+
 
 
 

@@ -63,6 +63,7 @@ urlpatterns = [
     url(r'^new_income_tag_data/$', views.new_income_tag_data, name='new_income_tag_data'),
     url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
     url(r'^transaction_details/$', views.transaction_details, name='transaction_details'),
+    url(r'^drill_down/$', views.drill_down, name='drill_down'),
 
     # class views
     path('transaction-detail/<int:pk>/', views.TransactionUpdate.as_view(), name='transaction-update'),

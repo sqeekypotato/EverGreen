@@ -10,7 +10,8 @@ from django.views.generic import View
 from django_pandas.io import read_frame
 from django.views.generic.edit import UpdateView
 
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import threading
 
@@ -19,7 +20,7 @@ from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm,
 from core_app.models import BankAccounts, Transaction, UserRule
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
-    prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule
+    prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule, check_for_dups
 
 
 from .models import Transaction, Tags, UniversalTags
@@ -65,13 +66,12 @@ def main_page(request):
                 income_cat_list.append((cat, cat))
         income_cat_list.sort()
         income_cat_list = [('All', 'All')] + income_cat_list
-        # __________________ end of dropdown preperations __________________________________________________________
 
         yearForm = YearForm(years=year_list)
         monthForm = MonthForm(monthNum=month_list)
         catForm = CategorySelection(categories=cat_list)
         incomeForm = IncomeCategorySelection(income_categories=income_cat_list)
-
+        # __________________ end of dropdown preperations __________________________________________________________
         # ___________________________getting values for comparing expenses to previous years___________________________
         tag_list = get_comparison_tags(request.user)
         comparison_list = {}
@@ -84,6 +84,9 @@ def main_page(request):
                 temp_dict['value'] = value
                 temp_string = '{}_{}'.format(tag[0], tag[1])
                 comparison_list[temp_string] = temp_dict
+        # _____________________________end of values for comparing_________________________________________________
+
+
 
         request.session['year'] = 'All'
 
@@ -93,7 +96,7 @@ def main_page(request):
             'catForm':catForm,
             'incomeCatForm':incomeForm,
             'year_title':request.session['year'],
-            'comparison_list':comparison_list
+            'comparison_list':comparison_list,
         }
         return HttpResponse(template.render(context, request))
     else:
@@ -189,7 +192,12 @@ def upload_transactions(request):
                 dataframe = dataframe.reset_index(drop=True)
                 account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first() #gets user account named in the request
 
-                t = threading.Thread(target=add_df_to_account, args=(dataframe, request, account, account.transDateCol,     # sends the dataframe to have the records added to the database
+                if request._post['dupliactes'] == 'on':
+                    scrubbed_df = check_for_dups(request.user, userAccount, dataframe) #checks to make sure there are no dups
+                else:
+                    scrubbed_df = dataframe
+
+                t = threading.Thread(target=add_df_to_account, args=(scrubbed_df, request, account, account.transDateCol,     # sends the dataframe to have the records added to the database
                                                   account.transCreditCol, account.transDebitCol, account.transDescriptionCol))
                 t.start()
 
@@ -293,9 +301,9 @@ def display_transaction_details(request):
         for key, value in request.session['transaction_details'].items():
             if key == 'all': #this key would be used for the main income chart
                 if monthNum != 0:
-                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthNum=monthNum) #this should have the day attached
+                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthName=value) #this should have the day attached
                 elif request.session['year'] != 'All':
-                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthNum=int(value))
+                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthName=value)
                 else:
                     myTransactions = myTransactions.filter(year=int(value))
             elif key == 'category':
@@ -560,6 +568,20 @@ def transaction_details(request):
         results = {'response':'response'}
         return JsonResponse(results, safe=False)
 
+# gets information for the drill-down chart for the tags
+def drill_down(request):
+    if request.user.is_authenticated:
+        cat_tag = request._post['value']
+        cat, tag = cat_tag.split(',')
+        now = datetime.now()
+        last_year = now - relativedelta(years=1)
+        myTransactions = Transaction.objects.filter(date__range=[last_year, now],user=request.user, category=cat, tag=tag, exclude_value=False).order_by('-date').all()
+        df = read_frame(myTransactions)
+        df = prepareDataFrame(df)
+        result = prepare_table(df, 'monthNum')
+        temp_str = 'Last 12 months for {} - {}'.format(cat, tag)
+        result['Title'] = temp_str
+        return JsonResponse(result, safe=False)
 
 # _____________________ Class Views ___________________________
 
