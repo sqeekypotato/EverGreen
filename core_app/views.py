@@ -297,28 +297,33 @@ def display_transaction_details(request):
     if request.user.is_authenticated:
         print('transactions details!')
         myTransactions = Transaction.objects.filter(user=request.user).all()
-        monthNum = int(request.session['monthNum'])
+        monthName = request.session['monthNum']
         for key, value in request.session['transaction_details'].items():
             if key == 'all': #this key would be used for the main income chart
-                if monthNum != 0:
-                    myTransactions = myTransactions.filter(year=int(request.session['year']), monthName=value) #this should have the day attached
-                elif request.session['year'] != 'All':
+                if request.session['year'] == 'All':
+                    myTransactions = myTransactions.filter(year=int(value))
+                elif request.session['year'] != 'All' and monthName == 'All':
                     myTransactions = myTransactions.filter(year=int(request.session['year']), monthName=value)
+                elif monthName != 'All':
+                    date = "{} {}, {}".format(monthName, value, request.session['year'])
+                    date = datetime.strptime(date, '%b %d, %Y')
+                    myTransactions = myTransactions.filter(date=date) #this should have the day attached
                 else:
                     myTransactions = myTransactions.filter(year=int(value))
+
             elif key == 'category':
-                if monthNum != 0:
+                if monthName != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
-                                                                category=value, monthNum=monthNum).all()
+                                                                category=value, monthName=monthName).all()
                 elif request.session['year'] != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
                                                                 category=value).all()
                 else:
                     myTransactions = Transaction.objects.filter(user=request.user, category=value).all()
             elif key == 'tag':
-                if monthNum != 0:
+                if monthName != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
-                                                                tag=value, monthNum=monthNum).all()
+                                                                tag=value, monthName=monthName).all()
                 elif request.session['year'] != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
                                                                 tag=value).all()
@@ -327,7 +332,7 @@ def display_transaction_details(request):
 
         df = read_frame(myTransactions)
         df = prepareDataFrame(df)
-        df = df[['date', 'description', 'credit', 'debit', 'category', 'tag','account', 'id', 'exclude_value']]
+        df = df[['date', 'description', 'credit', 'debit', 'category', 'tag','account', 'id', 'exclude_value', 'balance']]
         df = df.values.tolist()
         template = loader.get_template('core_app/transaction_details.html')
 
@@ -391,12 +396,12 @@ def get_months(request):
     if request.user.is_authenticated:
         request_year = request._post['year']
         if request_year == 'All':
-            months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user).distinct().order_by('monthNum')
+            months = Transaction.objects.values_list('monthNum','monthName').filter(user=request.user).distinct().order_by('monthNum')
         else:
-            months = Transaction.objects.values_list('monthNum', flat=True).filter(user=request.user, year=request_year).distinct().order_by('monthNum')
+            months = Transaction.objects.values_list('monthNum', 'monthName').filter(user=request.user, year=request_year).distinct().order_by('monthNum')
         month_list = ['All']
         for month in months:
-            month_list.append(month)
+            month_list.append(month[1])
         return JsonResponse(month_list, safe=False)
 
 # this isn't an api, it is just here so it was easy to find
@@ -418,6 +423,7 @@ def first_chart(request):
 # gets chart info when a dropdown is changed
 def new_chart_data(request):
     if request.user.is_authenticated:
+
        if request._post['name'] == 'years':
            if request._post['value'] == 'All':
                request.session['year'] = request._post['value']
@@ -432,20 +438,21 @@ def new_chart_data(request):
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request._post['value']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                result['session_title'] = request.session['year'] #this is added to change the title of the charts
+
                return JsonResponse(result)
 
        if request._post['name'] == 'monthNum':
-           if request._post['value'] == '0':
-               request.session['monthNum'] = '0'
+           if request._post['value'] == 'All':
+               request.session['monthNum'] = 'All'
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                result['session_title'] = request.session['year'] #this is added to change the title of the charts
                return JsonResponse(result)
            else:
                request.session['monthNum'] = request._post['value']
-               myTransactions = Transaction.objects.filter(user=request.user, monthNum=int(request._post['value']), year=int(request.session['year']), exclude_value=False).all()
+               myTransactions = Transaction.objects.filter(user=request.user, monthName=request._post['value'], year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'day')
-               result['session_title'] = '{} {}'.format(request.session['monthNum'], request.session['year']) #this is added to change the title of the charts
+               result['session_title'] = '{} {}'.format(request._post['value'], request.session['year']) #this is added to change the title of the charts
                return JsonResponse(result)
 
 # get information for when a specific tag is requested

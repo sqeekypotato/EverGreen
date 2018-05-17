@@ -13,12 +13,12 @@
               <thead>
                 <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
                     <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
-                    <th rowspan="1" colspan="1">Edit</th></tr>
+                    <th rowspan="1" colspan="1">Balance</th><th rowspan="1" colspan="1">Edit</th></tr>
               </thead>
               <tfoot>
                 <tr><th rowspan="1" colspan="1">Date</th><th rowspan="1" colspan="1">Discription</th><th rowspan="1" colspan="1">Credit</th><th rowspan="1" colspan="1">Debit</th>
                     <th rowspan="1" colspan="1">Category</th><th rowspan="1" colspan="1">Tag</th><th rowspan="1" colspan="1">Account</th><th rowspan="1" colspan="1">Exclude Value</th>
-                    <th rowspan="1" colspan="1">Edit</th></tr>
+                    <th rowspan="1" colspan="1">Balance</th><th rowspan="1" colspan="1">Edit</th></tr>
               </tfoot>
               <tbody>
           {% for row in results %}
@@ -31,6 +31,7 @@
                   <td>{{ row.5 }}</td>
                   <td>{{ row.6 }}</td>
                   <td>{{ row.8 }}</td>
+                  <td>{{ row.9 }}</td>
                   <td><a href="/transaction-detail/{{ row.7 }}/" class="btn btn-info" role="button">Edit Values</a></td>
                 </tr>
           {% endfor %}

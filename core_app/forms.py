@@ -69,12 +69,14 @@ class YearForm(forms.Form):
 
 class MonthForm(forms.Form):
     monthNum = forms.ChoiceField(choices=[])
+    monthNum.label = "Month"
 
     def __init__(self, *args, **kwargs):
         monthNum = kwargs.pop('monthNum')
         super(MonthForm, self).__init__(*args, **kwargs)
         self.fields['monthNum'].choices = monthNum
         self.fields['monthNum'].widget.attrs['class'] = 'form-control form-control-sm'
+
 
 class UploadToExistingAccount(forms.Form):
     file = forms.FileField()

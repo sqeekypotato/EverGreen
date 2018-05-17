@@ -97,6 +97,7 @@ $(document).ready(function() {
                chartCat(results, 0);
                chartTag(results, 0);
                incomeChart(results, 0);
+               $(".session_title").text(results['session_title'])
 //               $('#id_categories option[value=All]').attr('selected','selected');
             }
         });
