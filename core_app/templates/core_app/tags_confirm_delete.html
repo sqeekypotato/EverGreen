@@ -1,0 +1,22 @@
+{% extends "core_app/layout.html" %}
+{% block content %}
+
+<body class="bg-dark">
+  <div class="container">
+    <div class="card mx-auto mt-6">
+      <div class="card-header">Delete Tag</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {% load widget_tweaks %}
+          <div class="col-md-12 text-center">
+            <h4>Do you wish to delete this tag?</h4>
+
+            <button class="btn btn-default" type="submit">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+{% endblock %}

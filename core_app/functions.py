@@ -3,6 +3,7 @@ import pandas as pd
 import calendar
 import datetime
 from django_pandas.io import read_frame
+import math
 
 from .models import Transaction, Tags, UniversalTags, UserRule, BankAccounts
 
@@ -122,15 +123,14 @@ def prepare_table(df, interval):
         labels = debit_vals.index.tolist()
         labels = [str(x) for x in labels]
 
-    balance_vals = df.groupby([interval])['balance'].median()
-    balance_vals = balance_vals.round(2)
-
+    balance_vals = credit_vals.add(debit_vals, fill_value=0).round(2)
 
     # for category charts
     cat_vals = df.groupby(['category'])['debit'].sum()
     cat_vals = cat_vals.apply(lambda x: x * -1)
     cat_vals = cat_vals.where(cat_vals > 0)
     cat_vals = cat_vals.dropna()
+    cat_vals = cat_vals.round(2)
     cat_dict = cat_vals.to_dict()
     cat_labels = list(cat_dict.keys())
 
@@ -138,6 +138,7 @@ def prepare_table(df, interval):
     inc_vals = df.groupby(['category'])['credit'].sum()
     inc_vals = inc_vals.where(inc_vals > 0)
     inc_vals = inc_vals.dropna()
+    inc_vals = inc_vals.round(2)
     inc_dict = inc_vals.to_dict()
     inc_labels = list(inc_dict.keys())
 
@@ -302,6 +303,12 @@ def prepare_list_for_dropdown(query):
 def pretteyfy_numbers(number):
     if number:
         number = str(number)
+        if number[0] == '-':
+            negative = number[0]
+            number = number[1:]
+        else:
+            negative = ''
+
         dollars, cents = number.split('.')
         cents = cents[:2]
         if len(cents) == 1:
@@ -318,7 +325,7 @@ def pretteyfy_numbers(number):
             num_string = part1 + ',' + part2
             return '${}.{}'.format(num_string, cents)
         elif len(dollars) <= 3:
-            return '${}.{}'.format(dollars, cents)
+            return '${}{}.{}'.format(negative, dollars, cents)
 
 # take a category or tag and returns the previous year and previous month's spending on it
 def get_comparison(tag, user):
@@ -354,11 +361,19 @@ def get_comparison(tag, user):
         last_year_month = get_values(last_year_month_df)
         ytd = get_values(ytd_df)
         last_ytd = get_values(last_ytd_df)
+        month_sum = ytd_df.groupby(['monthNum'])['debit'].sum()
+        month_ave = month_sum.mean()
+        if not math.isnan(float(month_ave)):
+            month_ave = pretteyfy_numbers(month_ave)
+
+
+
 
         return {'last_month':last_month,
                 'last_year_month':last_year_month,
                 'ytd':ytd,
-                'last_ytd':last_ytd,}
+                'last_ytd':last_ytd,
+                'month_ave':month_ave}
     else:
         return False
 

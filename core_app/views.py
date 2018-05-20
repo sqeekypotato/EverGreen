@@ -8,7 +8,7 @@ from django.template import loader
 from django.core.mail import EmailMessage
 from django.views.generic import View
 from django_pandas.io import read_frame
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, DeleteView
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -20,7 +20,7 @@ from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm,
 from core_app.models import BankAccounts, Transaction, UserRule
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
-    prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule, check_for_dups
+    prepare_list_for_dropdown, get_comparison_tags, check_other_records_list, create_rule, check_for_dups, pretteyfy_numbers
 
 
 from .models import Transaction, Tags, UniversalTags
@@ -55,14 +55,16 @@ def main_page(request):
         for cat in categories:
             if cat != None:
                 if cat != 'Income':
-                    cat_list.append((cat, cat))
+                    if cat != 'Transfer':
+                        cat_list.append((cat, cat))
         cat_list.sort()
         cat_list = [('All', 'All')] + cat_list
 
-        income_categories = Transaction.objects.values_list('category', flat=True).filter(user=request.user).distinct()
+        income_categories = Transaction.objects.filter(user=request.user).exclude(credit=0).all()
+        income_cat_query = income_categories.values_list('category', flat=True).distinct()
         income_cat_list = []
-        for cat in income_categories:
-            if cat == 'Income':
+        for cat in income_cat_query:
+            if cat != 'Transfer':
                 income_cat_list.append((cat, cat))
         income_cat_list.sort()
         income_cat_list = [('All', 'All')] + income_cat_list
@@ -297,7 +299,7 @@ def display_transaction_details(request):
     if request.user.is_authenticated:
         print('transactions details!')
         myTransactions = Transaction.objects.filter(user=request.user).all()
-        monthName = request.session['monthNum']
+        monthName = request.session['monthName']
         for key, value in request.session['transaction_details'].items():
             if key == 'all': #this key would be used for the main income chart
                 if request.session['year'] == 'All':
@@ -321,14 +323,18 @@ def display_transaction_details(request):
                 else:
                     myTransactions = Transaction.objects.filter(user=request.user, category=value).all()
             elif key == 'tag':
+                if request.session['chart_clicked'] == 'SpendingTagChart':
+                    category = request.session['spending_category']
+                elif request.session['chart_clicked'] == 'IncomeTagChart':
+                    category = request.session['income_category']
                 if monthName != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
-                                                                tag=value, monthName=monthName).all()
+                                                                category=category, tag=value, monthName=monthName).all()
                 elif request.session['year'] != 'All':
                     myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
-                                                                tag=value).all()
+                                                                category=category, tag=value).all()
                 else:
-                    myTransactions = Transaction.objects.filter(user=request.user, tag=value).all()
+                    myTransactions = Transaction.objects.filter(user=request.user, category=category, tag=value).all()
 
         df = read_frame(myTransactions)
         df = prepareDataFrame(df)
@@ -345,9 +351,9 @@ def display_transaction_details(request):
 # lists tags and categories for editing
 def update_tags(request):
     if request.user.is_authenticated:
-        my_tags = Tags.objects.filter(user=request.user).all()
+        my_tags = Tags.objects.filter(user=request.user).order_by('category').all()
         df = read_frame(my_tags)
-        df = df[['category', 'tag', 'drill_down', 'id']]
+        df = df[['category', 'tag', 'drill_down', 'id', 'budget', 'fixed_cost']]
         df = df.values.tolist()
         template = loader.get_template('core_app/tag_details.html')
         context = {'results':df}
@@ -417,17 +423,17 @@ def first_chart(request):
         myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
         result = transaction_processing(myTransactions, 'year')
         request.session['year'] = 'All'
-        request.session['monthNum'] = '0'
+        request.session['monthName'] = 'All'
         return JsonResponse(result, safe=False)
 
-# gets chart info when a dropdown is changed
+# gets main spending chart info when a dropdown is changed
 def new_chart_data(request):
     if request.user.is_authenticated:
 
        if request._post['name'] == 'years':
            if request._post['value'] == 'All':
                request.session['year'] = request._post['value']
-               request.session['monthNum'] = 0
+               request.session['monthName'] = 'All'
                myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
                result = transaction_processing(myTransactions, 'year') #this is added to change the title of the charts
                result['session_title'] = 'All Years'
@@ -443,13 +449,13 @@ def new_chart_data(request):
 
        if request._post['name'] == 'monthNum':
            if request._post['value'] == 'All':
-               request.session['monthNum'] = 'All'
+               request.session['monthName'] = 'All'
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'monthNum')
                result['session_title'] = request.session['year'] #this is added to change the title of the charts
                return JsonResponse(result)
            else:
-               request.session['monthNum'] = request._post['value']
+               request.session['monthName'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, monthName=request._post['value'], year=int(request.session['year']), exclude_value=False).all()
                result = transaction_processing(myTransactions, 'day')
                result['session_title'] = '{} {}'.format(request._post['value'], request.session['year']) #this is added to change the title of the charts
@@ -459,14 +465,15 @@ def new_chart_data(request):
 def new_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
+        request.session['spending_category'] = request_cat
         if request.session['year'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat, exclude_value=False).all()
-        elif request.session['monthNum'] == '0':
+        elif request.session['monthName'] == '0':
             tags = Transaction.objects.filter(user=request.user, category=request_cat, year=int(request.session['year']),
                                               exclude_value=False).all()
         else:
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
-                                              year=int(request.session['year']),monthNum = int(request.session['monthNum']),
+                                              year=int(request.session['year']),monthName = request.session['monthName'],
                                               exclude_value=False).all()
 
 
@@ -494,15 +501,16 @@ def new_tag_data(request):
 def new_income_tag_data(request):
     if request.user.is_authenticated:
         request_cat = request._post['value']
+        request.session['income_category'] = request_cat
         if request.session['year'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat,exclude_value=False ).all()
-        elif request.session['monthNum'] == '0':
+        elif request.session['monthName'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
                                               year=int(request.session['year']),exclude_value=False).all()
         else:
             tags = Transaction.objects.filter(user=request.user, category=request_cat,
                                               year=int(request.session['year']),
-                                              monthNum=int(request.session['monthNum']),
+                                              monthName=request.session['monthName'],
                                               exclude_value=False).all()
 
         df = read_frame(tags)
@@ -528,14 +536,14 @@ def new_income_tag_data(request):
 def update_cat_dropdown(request):
     if request.user.is_authenticated:
         year = request.session['year']
-        month = request.session['monthNum']
+        month = request.session['monthName']
         if year == 'All':
             tags = Transaction.objects.filter(user=request.user).all()
-        elif request.session['monthNum'] == '0':
+        elif request.session['monthName'] == 'All':
             tags = Transaction.objects.filter(user=request.user, year=int(request.session['year']),).all()
         else:
             tags = Transaction.objects.filter(user=request.user, year=int(request.session['year']),
-                                              monthNum=int(request.session['monthNum'])).all()
+                                              monthName=request.session['monthName']).all()
 
         df = read_frame(tags)
         df = prepareDataFrame(df)
@@ -571,11 +579,12 @@ def transaction_details(request):
         category = request._post['name']
         value = request._post['value']
         request.session['transaction_details'] = {category:value}
+        request.session['chart_clicked'] = request._post['chart']
         print('{} with {}'.format(category, value))
         results = {'response':'response'}
         return JsonResponse(results, safe=False)
 
-# gets information for the drill-down chart for the tags
+# gets information to populate the drill-down chart depending on the tag that was selected
 def drill_down(request):
     if request.user.is_authenticated:
         cat_tag = request._post['value']
@@ -588,7 +597,37 @@ def drill_down(request):
         result = prepare_table(df, 'monthNum')
         temp_str = 'Last 12 months for {} - {}'.format(cat, tag)
         result['Title'] = temp_str
+
+        # get information for sidebar of chart
+        value = get_comparison((cat, tag), request.user)
+        result['tag_chart_last_month'] = value['last_month']['debit']
+        result['tag_chart_ytd'] = value['month_ave']
+        tag = Tags.objects.filter(user=request.user, category=cat, tag=tag).first()
+        result['budget'] = pretteyfy_numbers(float(tag.budget))
+        result['cat_tag'] = cat_tag
+
         return JsonResponse(result, safe=False)
+
+# sets up the proper session values to display the transactions details when the drill down chart is clicked.  The response isn't used
+def drill_down_chart_click(request):
+    if request.user.is_authenticated:
+        cat, tag = request._post['name'].split(',')
+        request.session['monthName'] = request._post['value']
+        # _______ determining the proper year for the month provided _________
+        num = 1
+        months = {}
+        for i in range(12): # gets the proper year for the month selected
+            month = datetime.now() - relativedelta(months=num)
+            months[month.strftime("%b")] = month.year
+            num += 1
+        selected_year = months[request._post['value']]
+        request.session['year'] = selected_year
+        request.session['chart_clicked'] = 'SpendingTagChart'
+        request.session['spending_category'] = cat
+        request.session['transaction_details'] = {'tag': tag}
+        results = {'response': 'response'}
+        return JsonResponse(results, safe=False)
+
 
 # _____________________ Class Views ___________________________
 
@@ -596,18 +635,33 @@ def drill_down(request):
 class TransactionUpdate(UpdateView):
     model = Transaction
     fields = ['date', 'description', 'credit', 'debit', 'category', 'tag', 'account', 'exclude_value']
-    success_url = '/main_page/'
+    success_url = '/display_transaction_details/'
 
-# for updateing tags and categories
+# delete a transaction
+class TransactionDelete(DeleteView):
+    model = Transaction
+    success_url = '/transaction_details/'
+
+# for updating tags and categories
 class TagsUpdate(UpdateView):
     model = Tags
-    fields = ['category', 'tag', 'drill_down']
+    fields = ['category', 'tag', 'drill_down', 'budget', 'fixed_cost']
+    success_url = '/update_tags/'
+
+# delete a tag
+class TagsDelete(DeleteView):
+    model = Tags
     success_url = '/update_tags/'
 
 # for updating user rules
 class RuleUpdate(UpdateView):
     model = UserRule
     fields = ['begins_with', 'ends_with', 'description', 'tag', 'category']
+
+# delete a rule
+class RuleDelete(DeleteView):
+    model = UserRule
+    success_url = '/update_rules/'
 
 # __________________Generic Pages______________________________
 def signup(request):

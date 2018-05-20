@@ -77,7 +77,6 @@ class MonthForm(forms.Form):
         self.fields['monthNum'].choices = monthNum
         self.fields['monthNum'].widget.attrs['class'] = 'form-control form-control-sm'
 
-
 class UploadToExistingAccount(forms.Form):
     file = forms.FileField()
     accountNames = forms.ChoiceField(choices=[])

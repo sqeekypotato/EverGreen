@@ -39,6 +39,7 @@ $(document).ready(function() {
 
         success: function (results) {
             chart_drill_down(results, 1)
+            chart_side_values(results)
         }
     });
 
@@ -54,7 +55,8 @@ $(document).ready(function() {
 
             success: function (results) {
                 chart_drill_down(results, 0)
-                $(this).addClass('background-color', 'red')
+                chart_side_values(results)
+
             }
         });
     });
@@ -90,6 +92,38 @@ $(document).ready(function() {
                 ]
             },
             options: {
+                onClick: function(evt) {
+                    var activePoints = this.getElementsAtEvent(evt);
+                    if (activePoints[0]) {
+                        var chartData = activePoints[0]['_chart'].config.data;
+                        var idx = activePoints[0]['_index'];
+
+                        var label = chartData.labels[idx];
+                        var value = chartData.datasets[0].data[idx];
+
+
+                    }
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/drill_down_chart_click/",
+                        data: {'name': results['cat_tag'],
+                            'value':label
+                        },
+                        dataType: 'json',
+
+                        success: function() {
+                            console.log('success for transaction details');
+                            window.location.href = "/display_transaction_details/";
+                        },
+
+                    });
+
+
+
+                },
+
+
                 legend: { display: false },
                 title: {
                     display: true,
@@ -98,6 +132,13 @@ $(document).ready(function() {
             }
         });
 
+    }
+
+    // updates the values on the side of the chart
+    function chart_side_values(results) {
+        $("#monthly_budget").text(results['budget'])
+        $("#spent_last_month").text(results['tag_chart_last_month'])
+        $("#ytd_average_spent").text(results['tag_chart_ytd'])
     }
 
 });

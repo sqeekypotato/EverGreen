@@ -64,11 +64,15 @@ urlpatterns = [
     url(r'^update_cat_dropdown/$', views.update_cat_dropdown, name='update_cat_dropdown'),
     url(r'^transaction_details/$', views.transaction_details, name='transaction_details'),
     url(r'^drill_down/$', views.drill_down, name='drill_down'),
+    url(r'^drill_down_chart_click/$', views.drill_down_chart_click, name='drill_down_chart_click'),
 
     # class views
     path('transaction-detail/<int:pk>/', views.TransactionUpdate.as_view(), name='transaction-update'),
+    path('transaction-delete/<int:pk>/', views.TransactionDelete.as_view(), name='transaction-delete'),
     path('tag-detail/<int:pk>/', views.TagsUpdate.as_view(), name='tags-update'),
+    path('tag-delete/<int:pk>/', views.TagsDelete.as_view(), name='tags-delete'),
     path('rule-detail/<int:pk>/', views.RuleUpdate.as_view(), name='rules-update'),
+    path('rule-delete/<int:pk>/', views.RuleDelete.as_view(), name='rules-delete'),
 
     # # # password_reset
     # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),

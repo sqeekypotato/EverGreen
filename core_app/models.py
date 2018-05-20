@@ -49,6 +49,9 @@ class Tags (models.Model):
     category = models.CharField(max_length=50)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     drill_down = models.BooleanField(default=False)
+    budget = models.IntegerField(default='0')
+    fixed_cost = models.BooleanField(default=False)
+    universal_average = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '{} - {} - {}'.format(self.category, self.tag, self.user)

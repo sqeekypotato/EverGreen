@@ -1,6 +1,6 @@
 $(document).ready(function() {
   console.log("ready to chart!");
-
+  $('#id_years').val('All');
   $.ajaxSetup({
      beforeSend: function(xhr, settings) {
          function getCookie(name) {
@@ -253,7 +253,7 @@ $(document).ready(function() {
               data: results['credits']
           },
           {
-              label: "Balance",
+              label: "Difference between Credits and Debits",
               backgroundColor: "rgba(0,153,255,0.8)",
               data: results['balance']
           }
@@ -293,7 +293,8 @@ $(document).ready(function() {
                     type: "POST",
                     url: "/transaction_details/",
                     data: {'name': 'category',
-                            'value':label
+                        'value': label,
+                        'chart': "SpendingCatChart"
                             },
                     dataType: 'json',
 
@@ -348,7 +349,8 @@ $(document).ready(function() {
                     type: "POST",
                     url: "/transaction_details/",
                     data: {'name': 'tag',
-                            'value':label
+                        'value': label,
+                        'chart': "SpendingTagChart"
                             },
                     dataType: 'json',
 
@@ -403,7 +405,8 @@ $(document).ready(function() {
                     type: "POST",
                     url: "/transaction_details/",
                     data: {'name': 'category',
-                            'value':label
+                        'value': label,
+                        'chart': "IncomeCatChart"
                             },
                     dataType: 'json',
 
@@ -458,7 +461,8 @@ $(document).ready(function() {
                     type: "POST",
                     url: "/transaction_details/",
                     data: {'name': 'tag',
-                            'value':label
+                        'value': label,
+                        'chart': "IncomeTagChart"
                             },
                     dataType: 'json',
 
