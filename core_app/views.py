@@ -468,7 +468,7 @@ def new_tag_data(request):
         request.session['spending_category'] = request_cat
         if request.session['year'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat, exclude_value=False).all()
-        elif request.session['monthName'] == '0':
+        elif request.session['monthName'] == 'All':
             tags = Transaction.objects.filter(user=request.user, category=request_cat, year=int(request.session['year']),
                                               exclude_value=False).all()
         else:
@@ -486,7 +486,7 @@ def new_tag_data(request):
         tag_labels = []
         for tag in tag_list:
             result = df.loc[df['tag'] == tag, 'debit'].sum()
-            result = result * -1  # this is put in so the chart shows posative values.  It didn't like negative ones
+            result = result * -1  # this is put in so the chart shows positive values.  It didn't like negative ones
             if result > 0:
                 tag_dict[tag] = result
                 tag_labels.append(str(tag))
@@ -589,12 +589,35 @@ def drill_down(request):
     if request.user.is_authenticated:
         cat_tag = request._post['value']
         cat, tag = cat_tag.split(',')
-        now = datetime.now()
-        last_year = now - relativedelta(years=1)
-        myTransactions = Transaction.objects.filter(date__range=[last_year, now],user=request.user, category=cat, tag=tag, exclude_value=False).order_by('-date').all()
-        df = read_frame(myTransactions)
-        df = prepareDataFrame(df)
-        result = prepare_table(df, 'monthNum')
+        num = 1
+        debit_vals_list = []
+        month_name_list = []
+        credit_vals_list = []
+        for i in range(11): # gets the proper year for the month selected
+            new_date = datetime.now() - relativedelta(months=num)
+            year = new_date.year
+            month = new_date.strftime("%b")
+            myTransactions = Transaction.objects.filter(year=year, monthName=month, user=request.user, category=cat,
+                                                        tag=tag, exclude_value=False).order_by('-date').all()
+            if len(myTransactions) >=1:
+                df = read_frame(myTransactions)
+                df = prepareDataFrame(df)
+
+                debit_vals = df.groupby(['monthNum'])['debit'].sum()
+                debit_vals = debit_vals.round(2)
+                debit_vals_list = [float(debit_vals)] + debit_vals_list #done so values appear in correct order on chart
+
+                credit_vals = df.groupby(['monthNum'])['credit'].sum()
+                credit_vals = credit_vals.round(2)
+                credit_vals_list = [float(credit_vals)] + credit_vals_list
+            else:
+                credit_vals_list = [0] + credit_vals_list
+                debit_vals_list = [0] + debit_vals_list
+            month_name_list = [month] + month_name_list #done so values appear in correct order on chart
+            num += 1
+
+        result = {'debits':debit_vals_list, 'labels':month_name_list, 'credits':credit_vals_list}
+
         temp_str = 'Last 12 months for {} - {}'.format(cat, tag)
         result['Title'] = temp_str
 
@@ -627,7 +650,6 @@ def drill_down_chart_click(request):
         request.session['transaction_details'] = {'tag': tag}
         results = {'response': 'response'}
         return JsonResponse(results, safe=False)
-
 
 # _____________________ Class Views ___________________________
 

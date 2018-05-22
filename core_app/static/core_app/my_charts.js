@@ -223,7 +223,8 @@ $(document).ready(function() {
                     type: "POST",
                     url: "/transaction_details/",
                     data: {'name': 'all',
-                            'value':label
+                        'value': label,
+                        'chart': "BalanceChart"
                             },
                     dataType: 'json',
 
