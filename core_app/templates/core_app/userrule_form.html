@@ -1,4 +1,5 @@
 {% extends "core_app/layout.html" %}
+{% load staticfiles %}
 {% block content %}
 
 <body class="bg-dark">
@@ -39,4 +40,6 @@
     </div>
   </div>
 </body>
+
+<script src="{% static 'core_app/rules.js' %}"></script>
 {% endblock %}
