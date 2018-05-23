@@ -6,7 +6,20 @@
     <div class="card card-login mx-auto mt-5">
       <div class="card-header">Select a file</div>
       <div class="card-body">
-
+        {% if form.errors %}
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">
+                        <strong>{{ error|escape }}</strong>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <strong>{{ error|escape }}</strong>
+                </div>
+            {% endfor %}
+        {% endif %}
         <form action="/new_account/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="file" class="form-control" name="file">

@@ -106,7 +106,8 @@ def fixList(list):
         result.append(i.decode("utf-8"))
     return result
 
-# takes a dataframe and returns multiple dicts that can be converted to json
+# takes a dataframe and returns multiple dicts that can be converted to json.  This is where the majority of the logic
+#  is for creating the data for the charts
 def prepare_table(df, interval):
     # general income chart
     df.sort_values('date')
@@ -131,8 +132,6 @@ def prepare_table(df, interval):
     cat_vals = cat_vals.where(cat_vals > 0)
     cat_vals = cat_vals.dropna()
     cat_vals = cat_vals.round(2)
-    cat_vals_tooltip_labels = cat_vals.map('${:,.2f}'.format)
-    cat_vals_tooltip_labels = cat_vals_tooltip_labels.values
     cat_dict = cat_vals.to_dict()
     cat_labels = list(cat_dict.keys())
 
@@ -147,7 +146,6 @@ def prepare_table(df, interval):
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
               'balance':balance_vals.tolist(),
-              'cat_vals_tooltip_labels':cat_vals_tooltip_labels.tolist(),
               'labels':labels,
               'cat_labels':cat_labels,
               'cat_vals':cat_dict,

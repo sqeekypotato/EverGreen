@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ModelForm
+from django.core.validators import FileExtensionValidator
 
 from .models import Transaction
 
@@ -23,7 +24,7 @@ class UserForm(forms.ModelForm):
         fields = ['username', 'email', 'password', 'country', 'state_province', 'number_of_people']
 
 class UploadFileForm(forms.Form):
-    file = forms.FileField()
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['csv', 'txt'])])
 
 class AccountSelectForm(forms.Form):
     CHOICES = [
@@ -78,9 +79,9 @@ class MonthForm(forms.Form):
         self.fields['monthNum'].widget.attrs['class'] = 'form-control form-control-sm'
 
 class UploadToExistingAccount(forms.Form):
-    file = forms.FileField()
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['csv', 'txt'])])
     accountNames = forms.ChoiceField(choices=[])
-    dupliactes = forms.BooleanField()
+    dupliactes = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         accountNames = kwargs.pop('accountNames')

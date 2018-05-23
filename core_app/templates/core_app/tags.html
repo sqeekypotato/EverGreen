@@ -15,6 +15,20 @@
     <div class="card-header">
       <i class="fa fa-table"></i> There are {{ num_of_blank_trans }} of records that do not have tags</div>
     <div class="card-body">
+        {% if form.errors %}
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">
+                        <strong>{{ error|escape }}</strong>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <strong>{{ error|escape }}</strong>
+                </div>
+            {% endfor %}
+        {% endif %}
         <div class="table-responsive">
       <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
         <th> Date </th> <th> Description </th><th>Income</th><th>Debit</th><th>Category</th><th>Tag</th>

@@ -6,7 +6,20 @@
     <div class="card card-login mx-auto mt-5">
       <div class="card-header">Select a file</div>
       <div class="card-body">
-
+        {% if form.errors %}
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">
+                        <strong>{{ error|escape }}</strong>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <strong>{{ error|escape }}</strong>
+                </div>
+            {% endfor %}
+        {% endif %}
         <form action="/upload_transactions/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <h6>Please select a file you wish to add</h6>
@@ -16,7 +29,7 @@
             <h6>Exclude Duplicates?</h6>
             {{ form.dupliactes }}
             <p>Please select a file that you wish to add and then make sure you attach it to the correct account.  The
-            option "exclude duplicates" will check to see if </p>
+            option "exclude duplicates" will attempt to ensure that no dupliate records are added.</p>
             <button class="btn btn-default" type="submit">Upload</button>
 
         </form>

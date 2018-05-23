@@ -107,13 +107,11 @@ def main_page(request):
 # create a new bank account
 def newAccount(request):
     if request.user.is_authenticated:
+        form = UploadFileForm(request.POST or None, request.FILES or None)
         if request.method == 'POST':
-            form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 request.session['df'] = fixQuotesForCSV(request.FILES['file'])
                 return redirect('account_details')
-        else:
-            form = UploadFileForm()
         return render(request, 'core_app/new_account.html', {'form': form})
     else:
         return redirect('home')
@@ -183,10 +181,16 @@ def account_details(request):
 
 # upload transactions to existing account
 def upload_transactions(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and BankAccounts.objects.filter(user=request.user).first():
+
+        accounts = BankAccounts.objects.values_list('account_name', flat=True).filter(user=request.user).distinct()
+        account_list = []
+        for account in accounts:
+            account_list.append((account, account))  # have to pass a tuple to the select form for choices
+        form = UploadToExistingAccount(request.POST or None, request.FILES or None, accountNames=account_list)
+
         if request.method == 'POST':
             print('uploading transactions')
-            form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 userAccount = request._post['accountNames']
                 df = fixQuotesForCSV(request.FILES['file']) #fixes problems with quotes and apostrophes
@@ -213,17 +217,18 @@ def upload_transactions(request):
                 return HttpResponse(template.render(context, request))
 
         template = loader.get_template('core_app/upload_transactions.html')
-        accounts = BankAccounts.objects.values_list('account_name', flat=True).filter(user=request.user).distinct()
-        account_list = []
-        for account in accounts:
-            account_list.append((account, account))  # have to pass a tuple to the select form for choices
-        form = UploadToExistingAccount(accountNames=account_list)
+
         context = {
             'form': form,
         }
         return HttpResponse(template.render(context, request))
     else:
-        return redirect('home')
+        template = loader.get_template('core_app/index.html')
+        message = 'Please ensure that you have an account set up before you try to add transactions!'
+        context = {
+            'message': message,
+        }
+        return HttpResponse(template.render(context, request))
 
 # adds tags and categories to transactions based on user input
 def tags(request):
@@ -296,6 +301,7 @@ def tags(request):
 
 # displays the list of transactions depending on what was clicked on the charts
 def display_transaction_details(request):
+
     if request.user.is_authenticated:
         print('transactions details!')
         myTransactions = Transaction.objects.filter(user=request.user).all()
