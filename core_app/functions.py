@@ -131,6 +131,8 @@ def prepare_table(df, interval):
     cat_vals = cat_vals.where(cat_vals > 0)
     cat_vals = cat_vals.dropna()
     cat_vals = cat_vals.round(2)
+    cat_vals_tooltip_labels = cat_vals.map('${:,.2f}'.format)
+    cat_vals_tooltip_labels = cat_vals_tooltip_labels.values
     cat_dict = cat_vals.to_dict()
     cat_labels = list(cat_dict.keys())
 
@@ -145,6 +147,7 @@ def prepare_table(df, interval):
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
               'balance':balance_vals.tolist(),
+              'cat_vals_tooltip_labels':cat_vals_tooltip_labels.tolist(),
               'labels':labels,
               'cat_labels':cat_labels,
               'cat_vals':cat_dict,
@@ -364,6 +367,8 @@ def get_comparison(tag, user):
         month_sum = ytd_df.groupby(['monthNum'])['debit'].sum()
         month_ave = month_sum.mean()
         if not math.isnan(float(month_ave)):
+            if month_ave < 0:
+                month_ave = month_ave * -1
             month_ave = pretteyfy_numbers(month_ave)
 
 

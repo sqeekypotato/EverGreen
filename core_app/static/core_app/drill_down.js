@@ -122,8 +122,16 @@ $(document).ready(function() {
 
 
                 },
-
-
+                scales:{
+                    yAxes:[{
+                        ticks:{beginAtZero: true}
+                    }]
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function (tooltipItem, data) { return data.labels[tooltipItem.index] + ' - ' + '$' + Number(tooltipItem.yLabel).toFixed(0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+                    }
+                },
                 legend: { display: false },
                 title: {
                     display: true,

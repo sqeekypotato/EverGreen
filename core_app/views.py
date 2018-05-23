@@ -593,7 +593,7 @@ def drill_down(request):
         debit_vals_list = []
         month_name_list = []
         credit_vals_list = []
-        for i in range(11): # gets the proper year for the month selected
+        for i in range(12): # gets the proper year for the month selected
             new_date = datetime.now() - relativedelta(months=num)
             year = new_date.year
             month = new_date.strftime("%b")
