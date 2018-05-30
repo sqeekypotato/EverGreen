@@ -64,8 +64,9 @@ def main_page(request):
         income_cat_query = income_categories.values_list('category', flat=True).distinct()
         income_cat_list = []
         for cat in income_cat_query:
-            if cat != 'Transfer':
-                income_cat_list.append((cat, cat))
+            if cat != None:
+                if cat != 'Transfer':
+                    income_cat_list.append((cat, cat))
         income_cat_list.sort()
         income_cat_list = [('All', 'All')] + income_cat_list
 
@@ -139,7 +140,7 @@ def account_details(request):
                 userAccount = BankAccounts()
                 userAccount.user = request.user
                 userAccount.account_name = request.POST['name']
-                userAccount.balance = convertToInt(request.POST['balance'])
+                # userAccount.balance = convertToInt(request.POST['balance'])
                 userAccount.startRow = int(request.POST['rows'])
                 userAccount.transDateCol = int(request.POST['date'])
                 userAccount.transCreditCol = int(request.POST['credit'])
@@ -269,7 +270,7 @@ def tags(request):
 
         trans = Transaction.objects.distinct().filter(user=request.user, tag=None)[:10] #gets ten records
         num_of_blank_trans = Transaction.objects.filter(user=request.user, tag=None).count()
-        cats = Tags.objects.distinct().values_list('category', flat=True)
+        cats = Tags.objects.filter(user=request.user).distinct().values_list('category', flat=True)
         tempcats = UniversalTags.objects.distinct().values_list('category', flat=True)
         cats1 = list(cats)
         tempcats1 = list(tempcats)
@@ -344,7 +345,7 @@ def display_transaction_details(request):
 
         df = read_frame(myTransactions)
         df = prepareDataFrame(df)
-        df = df[['date', 'description', 'credit', 'debit', 'category', 'tag','account', 'id', 'exclude_value', 'balance']]
+        df = df[['date', 'description', 'credit', 'debit', 'category', 'tag','account', 'id', 'exclude_value']]
         df = df.values.tolist()
         template = loader.get_template('core_app/transaction_details.html')
 
@@ -389,7 +390,7 @@ def get_tag(request):
         number = request._post['number']
         number = number.replace('cat', '#tag_option')
 
-        userTagsQuery = Tags.objects.filter(category=category)
+        userTagsQuery = Tags.objects.filter(category=category, user=request.user)
         uniTagQuery = UniversalTags.objects.filter(category=category)
         temp_list = []
         for item in userTagsQuery:

@@ -10,7 +10,7 @@ class BankAccounts (models.Model):
 
     date = models.DateField(auto_now_add=True)
     account_name = models.CharField(max_length=200)
-    balance = models.IntegerField()
+    # balance = models.IntegerField(blank=True, null=True)
     startRow = models.IntegerField()
     transDateCol = models.IntegerField()
     transCreditCol = models.IntegerField()
@@ -23,7 +23,7 @@ class BankAccounts (models.Model):
 
 class Transaction (models.Model):
 
-    balance = models.IntegerField()
+    # balance = models.IntegerField()
     date = models.DateField()
     description = models.CharField(max_length=1000)
     credit = models.IntegerField(null=True, blank=True)

@@ -7,6 +7,7 @@ import math
 
 from .models import Transaction, Tags, UniversalTags, UserRule, BankAccounts
 
+
 # takes the file, fixes it and returns a dataframe
 def fixQuotesForCSV(file):
     tempdata = StringIO()
@@ -45,13 +46,13 @@ def add_df_to_account(dataframe, request, userAccount, dateLocation, creditLocat
         monthName = calendar.month_abbr[monthNum]
         if debit < 0:
             debit = debit * -1
-        balance = userAccount.balance + credit - debit
+        # balance = userAccount.balance + credit - debit
         date = row[dateLocation].to_pydatetime().date()
         description = row[descripLocation]
         trans = Transaction(
             user=request.user,
             account=userAccount,
-            balance=balance,
+            # balance=balance,
             date=date,
             description=description,
             credit=credit,
@@ -63,7 +64,7 @@ def add_df_to_account(dataframe, request, userAccount, dateLocation, creditLocat
         trans.save()  # adds record to the database
         records_added += 1
 
-    first_run(user=request.user)
+    run_user_rules(user=request.user)
 
     return records_added
 
@@ -91,10 +92,10 @@ def prepareDataFrame(dataframe):
     # id, userID, account, balance, date, description, credit, debit, category, tag, MonthNum, MonthName, Year
     dataframe = dataframe.sort_values('date', ascending=True)
     dataframe['day'] = dataframe['date'].dt.day
-    dataframe[['balance', 'credit', 'debit']] = dataframe[['balance', 'credit', 'debit']].astype(float)
+    # dataframe[['balance', 'credit', 'debit']] = dataframe[['balance', 'credit', 'debit']].astype(float)
     dataframe['credit'] = dataframe['credit'].apply(lambda x: x / 100)
     dataframe['debit'] = dataframe['debit'].apply(lambda x: x/-100)
-    dataframe['balance'] = dataframe['balance'].apply(lambda x: x / 100)
+    # dataframe['balance'] = dataframe['balance'].apply(lambda x: x / 100)
     dataframe['date'] = dataframe['date'].dt.date
     return dataframe
 

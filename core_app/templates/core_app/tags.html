@@ -5,7 +5,7 @@
 
 <datalist id="cats">
     {% for value in category %}
-    <option value= "{{ value }}" >
+    <option value= "{{ value | safe}}" >
     {% endfor %}
 </datalist>
 

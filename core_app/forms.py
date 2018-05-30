@@ -33,15 +33,15 @@ class AccountSelectForm(forms.Form):
 
     name = forms.CharField(label='Account Name' ,required=True)
     name.widget.attrs['class'] = 'form-control form-control-sm'
-    balance = forms.DecimalField(label='Balance of Account' ,required=True)
-    balance.widget.attrs['class'] = 'form-control form-control-sm'
+    # balance = forms.DecimalField(label='Balance of Account')
+    # balance.widget.attrs['class'] = 'form-control form-control-sm'
     date = forms.ChoiceField(choices=CHOICES)
     date.label = "What column has the transaction's dates?"
     debit = forms.ChoiceField(choices=CHOICES)
     debit.label = 'What column has your debit values?'
     credit = forms.ChoiceField(choices=CHOICES)
     credit.label = 'What column has your credit values?'
-    rows = forms.ChoiceField(choices=[(0,0),(1,1), (2,2), (3,3), (4,4), (5,5)])
+    rows = forms.ChoiceField(choices=[(0,1),(1,2), (2,3), (3,4)])
     rows.widget.attrs['class'] = 'form-control form-control-sm'
     rows.label = 'What row do the transactions start?'
     description = forms.ChoiceField(choices=CHOICES)

@@ -28,8 +28,8 @@ $(document).ready(function() {
     var first_chart = $(".drilldown:first")
     var ctx_drill = document.getElementById('BarChartDrillDown').getContext('2d');
 
-    //first post to get information on original page display
-    $.ajax({
+    if($(".drilldown:first").length){ // checks to see if there is anything to report on, if not the ajax is not called
+        $.ajax({
         type: "POST",
         url: "/drill_down/",
         data: {
@@ -42,6 +42,9 @@ $(document).ready(function() {
             chart_side_values(results)
         }
     });
+    }
+    //first post to get information on original page display
+
 
     // when button is clicked it updates the chart
     $(".drilldown").click(function () {

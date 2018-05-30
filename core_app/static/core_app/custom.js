@@ -49,7 +49,7 @@ $(document).ready(function() {
                $('#tag_option'+text).empty();
                 var i;
                 for (i = 0; i < tag_list.length; ++i) {
-                    $('#tag_option'+text).append("<option value='" + tag_list[i] + "'>");
+                    $('#tag_option'+text).append('<option value="' + tag_list[i] + '">');
                 }
             }
         });
