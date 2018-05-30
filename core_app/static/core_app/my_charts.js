@@ -30,11 +30,17 @@ $(document).ready(function() {
   var tagChart;
   var incomeCatChart;
   var incomeTagsChart;
+  var varCategoryChart;
+  var varTagChart;
+
   var ctx = document.getElementById('balanceChart').getContext('2d');
   var ctx2 = document.getElementById('categoryChart').getContext('2d');
   var ctx3 = document.getElementById('tagChart').getContext('2d');
   var ctx4 = document.getElementById('incomeChart').getContext('2d');
   var ctx5 = document.getElementById('incomeTags').getContext('2d');
+  var ctx6 = document.getElementById('varcategoryChart').getContext('2d');
+  var ctx7 = document.getElementById('vartagChart').getContext('2d');
+
   var getdata = $.post('/first_charts/');
 
     getdata.done(function(results){
@@ -43,14 +49,18 @@ $(document).ready(function() {
     chartTag(results, 1);
     incomeChart(results, 1);
     incomeTags(results, 1);
+    varChartCat(results, 1);
+    varChartTag(results, 1);
     $("#month_form").hide();
     $("#tagContainer").hide();
     $("#income_tag_container").hide();
+    $("#vartagContainer").hide();
 });
 
     $("#id_years").change(function() {
         $("#tagContainer").hide();
         $("#income_tag_container").hide();
+        $("#vartagContainer").hide();
         formName = $(this).attr('name');
         value = $(this).val();
         updateMonths(value)
@@ -67,6 +77,8 @@ $(document).ready(function() {
                chartBalance(results, 0);
                chartCat(results, 0);
                incomeChart(results, 0);
+               varChartCat(results, 0);
+               varChartTag(results, 0);
                if(value=="All"){
                 $("#month_form").hide();}else {
                     $("#month_form").show();
@@ -80,6 +92,7 @@ $(document).ready(function() {
     $("#id_monthNum").change(function() {
         $("#tagContainer").hide();
         $("#income_tag_container").hide();
+        $("#vartagContainer").hide();
         formName = $(this).attr('name');
         value = $(this).val();
 
@@ -97,6 +110,8 @@ $(document).ready(function() {
                chartCat(results, 0);
                chartTag(results, 0);
                incomeChart(results, 0);
+               varChartCat(results, 0);
+               varChartTag(results, 0);
                $(".session_title").text(results['session_title'])
 //               $('#id_categories option[value=All]').attr('selected','selected');
             }
@@ -120,7 +135,9 @@ $(document).ready(function() {
             success: function(results){
                 if(value != 'All'){
                     $("#tagContainer").show();
+                    $("#vartagContainer").show();
                     chartTag(results, 0);
+                    varChartTag(results, 0);
                 }
             }
         });
@@ -161,7 +178,6 @@ $(document).ready(function() {
                 var $el = $("#id_monthNum");
                 $el.empty(); // remove old options
                 $.each(results, function (key, value) {
-                    console.log(value)
                   $el.append($("<option></option>")
                      .attr("value", value).text(value));
 
@@ -200,7 +216,6 @@ $(document).ready(function() {
     }
 
     function chartBalance(results, first){
-    console.log('balance chart!')
       if (first == 0){
        balanceChart.destroy();
       }
@@ -228,7 +243,6 @@ $(document).ready(function() {
       },
       options: {
           onClick: function (evt) {
-              console.log('click event!')
               var activePoints = this.getElementsAtEvent(evt);
               if (activePoints[0]) {
                   var chartData = activePoints[0]['_chart'].config.data;
@@ -251,7 +265,6 @@ $(document).ready(function() {
                   dataType: 'json',
 
                   success: function () {
-                      console.log('success for transaction details');
                       window.location.href = "/display_transaction_details/";
                   },
 
@@ -316,7 +329,6 @@ $(document).ready(function() {
                       dataType: 'json',
 
                       success: function () {
-                          console.log('success for transaction details');
                           window.location.href = "/display_transaction_details/";
                       },
 
@@ -358,7 +370,6 @@ $(document).ready(function() {
       },
       options: {
           onClick: function (evt) {
-              console.log('click event!')
               var activePoints = this.getElementsAtEvent(evt);
               if (activePoints[0]) {
                   var chartData = activePoints[0]['_chart'].config.data;
@@ -381,7 +392,6 @@ $(document).ready(function() {
                   dataType: 'json',
 
                   success: function () {
-                      console.log('success for transaction details');
                       window.location.href = "/display_transaction_details/";
                   },
 
@@ -420,7 +430,6 @@ $(document).ready(function() {
       },
       options: {
           onClick: function (evt) {
-              console.log('click event!')
               var activePoints = this.getElementsAtEvent(evt);
               if (activePoints[0]) {
                   var chartData = activePoints[0]['_chart'].config.data;
@@ -443,7 +452,6 @@ $(document).ready(function() {
                   dataType: 'json',
 
                   success: function () {
-                      console.log('success for transaction details');
                       window.location.href = "/display_transaction_details/";
                   },
 
@@ -482,7 +490,6 @@ $(document).ready(function() {
       },
       options: {
           onClick: function (evt) {
-              console.log('click event!')
               var activePoints = this.getElementsAtEvent(evt);
               if (activePoints[0]) {
                   var chartData = activePoints[0]['_chart'].config.data;
@@ -505,7 +512,6 @@ $(document).ready(function() {
                   dataType: 'json',
 
                   success: function () {
-                      console.log('success for transaction details');
                       window.location.href = "/display_transaction_details/";
                   },
 
@@ -521,9 +527,131 @@ $(document).ready(function() {
     });
 }
 
+    function varChartCat(results, first) {
+        //        create chart
+        var categories = results['var_cat_vals']
+        var myValues = $.map(categories, function (value, key) { return value });
+        var colours = []
+        for (var i = 0; i < myValues.length; i++) {
+            colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
+        }
+
+        if (first == 0) {
+            varCategoryChart.destroy();
+        }
+        varCategoryChart = new Chart(ctx6, {
+            type: 'pie',
+            data: {
+                labels: results['var_cat_labels'],
+                datasets: [
+                    {
+                        backgroundColor: colours,
+                        data: myValues
+                    }
+                ]
+            },
+            options: {
+                onClick: function (evt) {
+                    var activePoints = this.getElementsAtEvent(evt);
+                    if (activePoints[0]) {
+                        var chartData = activePoints[0]['_chart'].config.data;
+                        var idx = activePoints[0]['_index'];
+
+                        var label = chartData.labels[idx];
+                        var value = chartData.datasets[0].data[idx];
 
 
+                    }
 
+                    $.ajax({
+                        type: "POST",
+                        url: "/transaction_details/",
+                        data: {
+                            'name': 'category',
+                            'value': label,
+                            'chart': "SpendingCatChart"
+                        },
+                        dataType: 'json',
+
+                        success: function () {
+                            window.location.href = "/display_transaction_details/";
+                        },
+
+                    });
+
+                },
+                animation: false,
+                tooltips: {
+                    callbacks: {
+                        label: function (tooltipItem, data) { return data.labels[tooltipItem.index] + ' - $' + Number(data['datasets'][0]['data'][tooltipItem['index']]).toFixed(0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+                    }
+                },
+
+            },
+        });
+
+    }
+
+    function varChartTag(results, first) {
+        console.log('var_chart_fired!')
+        var myValues1 = $.map(results['var_tag_vals'], function (value, key) { return value });
+        var colours = []
+        for (var i = 0; i < myValues1.length; i++) {
+            colours.push('rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')')
+        }
+        if (first == 0) {
+            varTagChart.destroy();
+        }
+        varTagChart = new Chart(ctx7, {
+            type: 'pie',
+            data: {
+                labels: results['var_tag_labels'],
+                datasets: [
+
+                    {
+                        backgroundColor: colours,
+                        data: myValues1
+                    }
+                ]
+            },
+            options: {
+                onClick: function (evt) {
+                    var activePoints = this.getElementsAtEvent(evt);
+                    if (activePoints[0]) {
+                        var chartData = activePoints[0]['_chart'].config.data;
+                        var idx = activePoints[0]['_index'];
+
+                        var label = chartData.labels[idx];
+                        var value = chartData.datasets[0].data[idx];
+
+
+                    }
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/transaction_details/",
+                        data: {
+                            'name': 'tag',
+                            'value': label,
+                            'chart': "SpendingTagChart"
+                        },
+                        dataType: 'json',
+
+                        success: function () {
+                            window.location.href = "/display_transaction_details/";
+                        },
+
+                    });
+
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function (tooltipItem, data) { return data.labels[tooltipItem.index] + ' - $' + Number(data['datasets'][0]['data'][tooltipItem['index']]).toFixed(0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+                    }
+                },
+            },
+        });
+    }
 
 
 

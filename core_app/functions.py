@@ -109,7 +109,7 @@ def fixList(list):
 
 # takes a dataframe and returns multiple dicts that can be converted to json.  This is where the majority of the logic
 #  is for creating the data for the charts
-def prepare_table(df, interval):
+def prepare_table(df, interval, logged_in_user):
     # general income chart
     df.sort_values('date')
     credit_vals = df.groupby([interval])['credit'].sum()
@@ -144,6 +144,19 @@ def prepare_table(df, interval):
     inc_dict = inc_vals.to_dict()
     inc_labels = list(inc_dict.keys())
 
+    # for variable cost chart
+    fixed_categories = Tags.objects.values_list('category', 'tag').filter(user=logged_in_user, fixed_cost=True).all()
+    for index, row in df.iterrows():
+        if (row['category'], row['tag']) in fixed_categories:
+            df.drop(index, inplace=True)
+    var_cat_vals = df.groupby(['category'])['debit'].sum()
+    var_cat_vals = var_cat_vals.apply(lambda x: x * -1)
+    var_cat_vals = var_cat_vals.where(cat_vals > 0)
+    var_cat_vals = var_cat_vals.dropna()
+    var_cat_vals = var_cat_vals.round(2)
+    var_cat_dict = var_cat_vals.to_dict()
+    var_cat_labels = list(var_cat_dict.keys())
+
     new_df = {'credits':credit_vals.tolist(),
               'debits':debit_vals.tolist(),
               'balance':balance_vals.tolist(),
@@ -151,7 +164,9 @@ def prepare_table(df, interval):
               'cat_labels':cat_labels,
               'cat_vals':cat_dict,
               'inc_vals':inc_dict,
-              'inc_labels':inc_labels
+              'inc_labels':inc_labels,
+              'var_cat_labels':var_cat_labels,
+              'var_cat_vals':var_cat_dict
               }
 
     return new_df

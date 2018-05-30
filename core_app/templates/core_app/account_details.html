@@ -70,21 +70,23 @@
       <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
           <thead>
             <tr>
+                <th>Row Number</th>
                 {% for item in headers%}
                 <th rowspan="1" colspan="1">Column {{ item }}</th>
                 {% endfor %}
             </tr>
           </thead>
           <tbody>
-
-          </tbody>
           {% for item in df %}
             <tr role="row" class="odd">
+                <td> </td>
                 {% for i in item %}
                 <td class="sorting_1">{{ i }}</td>
                 {% endfor %}
             </tr>
           {% endfor %}
+          </tbody>
+
       </table>
       </div>
   </div>

@@ -28,7 +28,7 @@ from .models import Transaction, Tags, UniversalTags
 # _______________________main pages ________________________________________
 # landing page
 def home(request):
-    message = 'Hello and welcome to Evergreen Financial!'
+    message = 'Welcome to Evergreen Financial!'
     template = loader.get_template('core_app/index.html')
     # populate_universal_tags() #only run this the first time.  It populates the database
     context = {
@@ -418,17 +418,17 @@ def get_months(request):
         return JsonResponse(month_list, safe=False)
 
 # this isn't an api, it is just here so it was easy to find
-def transaction_processing(myTransactions, my_interval):
+def transaction_processing(myTransactions, my_interval, current_user):
     df = read_frame(myTransactions)
     df = prepareDataFrame(df)
-    result = prepare_table(df, my_interval)
+    result = prepare_table(df, my_interval, current_user)
     return result
 
 # gets info for the first chart that is displayed
 def first_chart(request):
     if request.user.is_authenticated:
         myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
-        result = transaction_processing(myTransactions, 'year')
+        result = transaction_processing(myTransactions, 'year', current_user=request.user)
         request.session['year'] = 'All'
         request.session['monthName'] = 'All'
         return JsonResponse(result, safe=False)
@@ -442,14 +442,14 @@ def new_chart_data(request):
                request.session['year'] = request._post['value']
                request.session['monthName'] = 'All'
                myTransactions = Transaction.objects.filter(user=request.user, exclude_value=False).all()
-               result = transaction_processing(myTransactions, 'year') #this is added to change the title of the charts
+               result = transaction_processing(myTransactions, 'year', current_user=request.user) #this is added to change the title of the charts
                result['session_title'] = 'All Years'
 
                return JsonResponse(result)
            else:
                request.session['year'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request._post['value']), exclude_value=False).all()
-               result = transaction_processing(myTransactions, 'monthNum')
+               result = transaction_processing(myTransactions, 'monthNum', current_user=request.user)
                result['session_title'] = request.session['year'] #this is added to change the title of the charts
 
                return JsonResponse(result)
@@ -458,13 +458,13 @@ def new_chart_data(request):
            if request._post['value'] == 'All':
                request.session['monthName'] = 'All'
                myTransactions = Transaction.objects.filter(user=request.user, year=int(request.session['year']), exclude_value=False).all()
-               result = transaction_processing(myTransactions, 'monthNum')
+               result = transaction_processing(myTransactions, 'monthNum', current_user=request.user)
                result['session_title'] = request.session['year'] #this is added to change the title of the charts
                return JsonResponse(result)
            else:
                request.session['monthName'] = request._post['value']
                myTransactions = Transaction.objects.filter(user=request.user, monthName=request._post['value'], year=int(request.session['year']), exclude_value=False).all()
-               result = transaction_processing(myTransactions, 'day')
+               result = transaction_processing(myTransactions, 'day', current_user=request.user)
                result['session_title'] = '{} {}'.format(request._post['value'], request.session['year']) #this is added to change the title of the charts
                return JsonResponse(result)
 
@@ -486,21 +486,35 @@ def new_tag_data(request):
 
         df = read_frame(tags)
         df = prepareDataFrame(df)
+        var_df = df
 
-        # tag chart
-        tag_list = df.tag.unique()
-        tag_dict = {}
-        tag_labels = []
-        for tag in tag_list:
-            result = df.loc[df['tag'] == tag, 'debit'].sum()
-            result = result * -1  # this is put in so the chart shows positive values.  It didn't like negative ones
-            if result > 0:
-                tag_dict[tag] = result
-                tag_labels.append(str(tag))
+        def generate_tags(df_to_process):
+            # tag chart
+            tag_list = df_to_process.tag.unique()
+            tag_dict = {}
+            tag_labels = []
+            for tag in tag_list:
+                result = df_to_process.loc[df_to_process['tag'] == tag, 'debit'].sum()
+                result = result * -1  # this is put in so the chart shows positive values.  It didn't like negative ones
+                if result > 0:
+                    tag_dict[tag] = result
+                    tag_labels.append(str(tag))
+            return tag_labels, tag_dict
+
+        tag_labels, tag_dict = generate_tags(df)
+
+        fixed_tags = Tags.objects.values_list('category', 'tag').filter(user=request.user, fixed_cost=True).all()
+        for index, row in var_df.iterrows():
+            if (row['category'], row['tag']) in fixed_tags:
+                var_df.drop(index, inplace=True)
+
+        var_tag_labels, var_tag_dict = generate_tags(var_df)
 
         results = {
             'tag_labels': tag_labels,
             'tag_vals': tag_dict,
+            'var_tag_labels': var_tag_labels,
+            'var_tag_vals': var_tag_dict
         }
         return JsonResponse(results, safe=False)
 

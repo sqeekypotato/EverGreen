@@ -13,6 +13,16 @@ h6{padding-top: 20px;}
     margin-bottom:20px;
     }
 
-#mainNav.navbar-dark .navbar-collapse .navbar-sidenav {
+#dataTable {
+    counter-reset: rowNumber;
+}
 
+#dataTable tbody tr {
+    counter-increment: rowNumber;
+}
+
+#dataTable tbody tr td:first-child::before {
+    content: counter(rowNumber);
+    min-width: 1em;
+    margin-right: 0.5em;
 }

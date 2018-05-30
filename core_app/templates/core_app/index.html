@@ -1,6 +1,19 @@
 
 {% extends "core_app/layout.html" %}
 {% block content %}
-<p> hello {{ user }}</p>
-<p>{{ message }}</p>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3>Because Money Doesn't Grow on Trees</h3>
+        </div>
+        <div class="card-body">
+            <p> hello {{ user }}.  {{ message }}</p>
+            <p>If this is your first time here.  Press this button to get started <a href="/signup" class="btn btn-info">Sign up</a> </p>
+            <p>If you have been here before, please login here <a href="/login" class="btn btn-info">Login</a> </p>
+
+        </div>
+    </div>
+</div>
+
 {% endblock %}

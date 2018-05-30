@@ -15,6 +15,62 @@
 
       </div>
 
+      <div class="row">
+          <div class="col-lg-4">
+              <div class="card mb-2">
+                  <div class="card-header">
+                      <i> What is the difference between Spending Categories and Variable Spending Categories?</i>
+                  </div>
+                  <div class="card-body">
+                      <p><b>Spending Categories</b> is the sum of all the money that you have spent grouped into various
+                          categories. If it is money coming out of your account and you have tagged it, it will appear here.
+                      If you haven't tagged the item yet, it will not appear in either chart</p>
+                      <p><b>Variable Spending Categories</b> is the sum of all the money that you have spent grouped into
+                      categories that <i>does not have the fixed cost attribute attached</i>.  This allows you greater
+                      control to view areas where you can save money.  It is unlikely that you will be able to pay less
+                      properly tax, so you would marked that as a fixed cost.  Property taxes then would not appear here.
+                      Allowing you to see more of the expenses that you can do something about.  You can add the fixed
+                      cost atribute to a category and tag by editing the Tags under "Manage Tags and Rules"</p>
+                  </div>
+
+              </div>
+          </div>
+          <div class="col-lg-4">
+            <!-- Example Pie Chart Card-->
+            <div class="card mb-3">
+            <div class="card-header">
+              <i class="fa fa-pie-chart"></i>Spending Categories <b class="session_title">{{ year_title }}</b></div>
+            <div class="card-body">
+              <canvas id="categoryChart" width="100%" height="100"></canvas>
+                <div class="chart_container" id="tagContainer">
+                    <h4>Spending Tags</h4>
+                    <div class="chart_container">
+                        <canvas id="tagChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer small text-muted">Click on chart for more information</div>
+          </div>
+          </div>
+          <div class="col-lg-4">
+              <!-- Example Pie Chart Card-->
+              <div class="card mb-3">
+                <div class="card-header">
+                  <i class="fa fa-pie-chart"></i>Variable Spending Categories <b class="session_title">{{ year_title }}</b></div>
+                <div class="card-body">
+                  <canvas id="varcategoryChart" width="100%" height="100"></canvas>
+                    <div class="chart_container" id="vartagContainer">
+                        <h4>Variable Spending Tags</h4>
+                        <div class="chart_container">
+                            <canvas id="vartagChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer small text-muted">Click on chart for more information</div>
+              </div>
+
+          </div>
+      </div>
 
       <div class="row">
         <div class="col-lg-8">
@@ -90,21 +146,6 @@
           <!-- /Card Columns-->
         </div>
         <div class="col-lg-4">
-          <!-- Example Pie Chart Card-->
-          <div class="card mb-3">
-            <div class="card-header">
-              <i class="fa fa-pie-chart"></i>Spending Categories <b class="session_title">{{ year_title }}</b></div>
-            <div class="card-body">
-              <canvas id="categoryChart" width="100%" height="100"></canvas>
-                <div class="chart_container" id="tagContainer">
-                    <h4>Spending Tags</h4>
-                    <div class="chart_container">
-                        <canvas id="tagChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer small text-muted">Click on chart for more information</div>
-          </div>
 
           <!-- Example Pie Chart Card-->
           <div class="card mb-3">
@@ -121,6 +162,7 @@
             </div>
               <div class="card-footer small text-muted">Click on chart for more information</div>
           </div>
+
         </div>
       </div>
 
