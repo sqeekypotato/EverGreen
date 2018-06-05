@@ -6,9 +6,10 @@ from django.contrib.auth import login, authenticate
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.core.mail import EmailMessage
-from django.views.generic import View
+from django.contrib.auth.models import User
 from django_pandas.io import read_frame
 from django.views.generic.edit import UpdateView, DeleteView
+
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -16,7 +17,7 @@ import pandas as pd
 import threading
 
 from core_app.forms import ContactForm, UploadToExistingAccount, UploadFileForm, AccountSelectForm, YearForm, MonthForm,\
-    CategorySelection, IncomeCategorySelection
+    CategorySelection, IncomeCategorySelection, UserAccountDeleteForm
 from core_app.models import BankAccounts, Transaction, UserRule
 from core_app.functions import fixQuotesForCSV, convertToInt, buildTagDict, prepareDataFrame, prepare_table,\
     check_other_records, add_tags_to_database, add_df_to_account, populate_universal_tags, first_run, get_comparison, \
@@ -199,7 +200,7 @@ def upload_transactions(request):
                 dataframe = dataframe.reset_index(drop=True)
                 account = BankAccounts.objects.filter(account_name=userAccount, user=request.user).first() #gets user account named in the request
 
-                if request._post['dupliactes'] == 'on':
+                if request._post['check_dupliactes'] == 'yes':
                     scrubbed_df = check_for_dups(request.user, userAccount, dataframe) #checks to make sure there are no dups
                 else:
                     scrubbed_df = dataframe
@@ -381,6 +382,32 @@ def update_rules(request):
     else:
         return redirect('home')
 
+def update_account(request):
+    if request.user.is_authenticated:
+        my_tags = BankAccounts.objects.filter(user=request.user).all()
+        df = read_frame(my_tags)
+        df = df[['date', 'account_name', 'id']]
+        df = df.values.tolist()
+        template = loader.get_template('core_app/edit_account_details.html')
+        context = {'results': df}
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
+
+def delete_user_account(request):
+    if request.user.is_authenticated:
+        form = UserAccountDeleteForm(request.POST)
+        if request.method == "POST":
+            if form.is_valid():
+                if request._post['are_you_sure'] == 'yes':
+                    u = User.objects.get(username=request.user)
+                    u.delete()
+                    return redirect('home')
+        template = loader.get_template('core_app/user_account_delete.html')
+        context = {'form':form}
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect('home')
 # ________________Ajax requests _______________________________
 
 # gets tags for dropdown
@@ -706,6 +733,14 @@ class RuleDelete(DeleteView):
     model = UserRule
     success_url = '/update_rules/'
 
+class AccountUpdate(UpdateView):
+    model = BankAccounts
+    fields = ['account_name']
+    success_url = '/update_account/'
+# delete a rule
+class AccountDelete(DeleteView):
+    model = BankAccounts
+    success_url = '/update_account/'
 # __________________Generic Pages______________________________
 def signup(request):
     if request.method == 'POST':

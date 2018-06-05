@@ -42,6 +42,8 @@ urlpatterns = [
     url(r'^update_tags/$', views.update_tags, name='update_tags'),
     # display_rule_details
     url(r'^update_rules/$', views.update_rules, name='update_rules'),
+    url(r'^delete_user_account/$', views.delete_user_account, name='delete_user_account'),
+    url(r'^update_account/$', views.update_account, name='update_account'),
     # tags
     url(r'^tags/$', views.tags, name='tags'),
     # get_tags
@@ -54,6 +56,17 @@ urlpatterns = [
     url(r'^logout/$', auth_views.logout, {'template_name': 'core_app/logout.html'}, name='logout'),
     # contact form
     url(r'^contact/$', views.contact, name='contact'),
+    # # # password_reset
+    url(r'^password_reset/$', auth_views.password_reset, {'template_name': 'core_app/password_reset.html'}, name='password_reset'),
+    # # # password_change
+    url(r'^password_change/$', auth_views.password_change, {'template_name': 'core_app/password_change.html'}, name='password_change'),
+    # # # password_change
+    url(r'^accounts/password_change/done/$', auth_views.password_change_done, {'template_name': 'core_app/change_done.html'}, name='password_change_done'),
+    # # # password_change
+    url(r'^accounts/password_reset/done/$', auth_views.password_reset, {'template_name': 'core_app/change_done.html'}, name='password_reset_done'),
+    # # # # password_change
+    # url(r'^reset/<uidb64>/<token>$', auth_views.password_reset, {'template_name': 'core_app/password_reset.html'}, name='password_reset_comfirm'),
+
 
     # api
     url(r'^new_chart_data/$', views.new_chart_data, name='new_chart_data'),
@@ -73,17 +86,9 @@ urlpatterns = [
     path('tag-delete/<int:pk>/', views.TagsDelete.as_view(), name='tags-delete'),
     path('rule-detail/<int:pk>/', views.RuleUpdate.as_view(), name='rules-update'),
     path('rule-delete/<int:pk>/', views.RuleDelete.as_view(), name='rules-delete'),
+    path('account-update/<int:pk>/', views.AccountUpdate.as_view(), name='account-update'),
+    path('account-delete/<int:pk>/', views.AccountDelete.as_view(), name='account-delete'),
 
-    # # # password_reset
-    # url(r'^password_reset/$', auth_views.password_reset, name='password_reset'),
-    # # # password_change
-    # url(r'^password_change/$', auth_views.password_change, name='password_change'),
-    # # # password_change
-    # url(r'^password_change/done/$', auth_views.password_change_done, name='password_change_done'),
-    # # # password_change
-    # url(r'^password_reset/done/$', auth_views.password_reset, name='password_reset_done'),
-    # # # password_change
-    # url(r'^reset/<uidb64>/<token>$', auth_views.password_reset, name='password_reset_comfirm'),
 ]
 
 handler404 = 'core_app.views.handler404'

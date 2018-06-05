@@ -81,7 +81,7 @@ class MonthForm(forms.Form):
 class UploadToExistingAccount(forms.Form):
     file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['csv', 'txt'])])
     accountNames = forms.ChoiceField(choices=[])
-    dupliactes = forms.BooleanField(required=False)
+    check_dupliactes = forms.ChoiceField(choices=[('yes','Yes'), ('no', 'No')])
 
     def __init__(self, *args, **kwargs):
         accountNames = kwargs.pop('accountNames')
@@ -106,3 +106,8 @@ class IncomeCategorySelection(forms.Form):
         super(IncomeCategorySelection, self).__init__(*args, **kwargs)
         self.fields['income_categories'].choices = income_categories
         self.fields['income_categories'].widget.attrs['class'] = 'form-control form-control-sm'
+
+class UserAccountDeleteForm(forms.Form):
+    are_you_sure = forms.ChoiceField(choices=[('yes', 'Yes'), ('no', 'No')])
+    are_you_sure.label = "Are you sure?"
+    are_you_sure.widget.attrs['class'] = 'form-control form-control-sm'

@@ -5,7 +5,7 @@
 <body class="bg-dark">
   <div class="container">
     <div class="card mx-auto mt-6">
-      <div class="card-header">Edit Rule Values</div>
+      <div class="card-header">Edit Bank Account</div>
       <div class="card-body">
         {% if form.errors %}
             {% for field in form %}
@@ -26,12 +26,7 @@
           {% load widget_tweaks %}
           <div class="table-responsive">
             <table class="table table-bordered" width="100%" cellspacing="0">
-
-          <tr><td>Look at begining</td><td>{{ form.begins_with|add_class:'form-control form-control-sm' }}</td></tr>
-          <tr><td>Look at end</td><td>{{ form.ends_with|add_class:'form-control form-control-sm' }}</td></tr>
-          <tr><td>Category</td><td>{{ form.category|add_class:'form-control form-control-sm' }}</td></tr>
-          <tr><td>Tag</td><td>{{ form.tag|add_class:'form-control form-control-sm'  }}</td></tr>
-          <tr><td>Descprition</td><td>{{ form.description|add_class:'form-control form-control-sm' }}</td></tr>
+                <tr><td>Name</td><td>{{ form.account_name|add_class:'form-control form-control-sm' }}</td></tr>
             </table>
           </div>
           <button class="btn btn-default" type="submit">Submit</button>
@@ -41,5 +36,4 @@
   </div>
 </body>
 
-<script src="{% static 'core_app/rules.js' %}"></script>
 {% endblock %}

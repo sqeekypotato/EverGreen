@@ -22,15 +22,19 @@
         {% endif %}
         <form action="/upload_transactions/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            {% load widget_tweaks %}
             <h6>Please select a file you wish to add</h6>
-            {{ form.file }}
+            {{ form.file|add_class:'form-control form-control-sm' }}
             <h6>Select an account that these transactions will be added to</h6>
-            {{ form.accountNames }}
+            {{ form.accountNames|add_class:'form-control form-control-sm' }}
             <h6>Exclude Duplicates?</h6>
-            {{ form.dupliactes }}
+            {{ form.check_dupliactes|add_class:'form-control form-control-sm' }}
             <p>Please select a file that you wish to add and then make sure you attach it to the correct account.  The
             option "exclude duplicates" will attempt to ensure that no dupliate records are added.</p>
-            <button class="btn btn-default" type="submit">Upload</button>
+            <div class="text-center">
+               <button class="btn btn-default" type="submit">Upload</button>
+            </div>
+
 
         </form>
        </div>

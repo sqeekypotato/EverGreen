@@ -38,17 +38,35 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarResponsive">
       <ul class="navbar-nav navbar-sidenav" id="exampleAccordion">
-        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Components">
-          <a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#collapseComponents" data-parent="#exampleAccordion">
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="User Account">
+          <a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#collapseMulti2" data-parent="#exampleAccordion">
             <i class="fa fa-fw fa-wrench"></i>
+            <span class="nav-link-text">Manage User Accounts</span>
+          </a>
+          <ul class="sidenav-second-level collapse" id="collapseMulti2">
+            <li>
+              <a href="/password_change/">Change Password</a>
+            </li>
+            <li>
+              <a href="/delete_user_account/">Delete User Account</a>
+            </li>
+
+          </ul>
+        </li>
+        <li class="nav-item" data-toggle="tooltip" data-placement="right" title="Bank Accounts">
+          <a class="nav-link nav-link-collapse collapsed" data-toggle="collapse" href="#collapseComponents" data-parent="#exampleAccordion">
+            <i class="fa fa-fw fa-dollar"></i>
             <span class="nav-link-text">Bank Account Settings</span>
           </a>
           <ul class="sidenav-second-level collapse" id="collapseComponents">
             <li>
+              <a href="/new_account">Create New Account</a>
+            </li>
+            <li>
               <a href="/upload_transactions">Upload Transactions to Existing Account</a>
             </li>
             <li>
-              <a href="/new_account">Create New Account</a>
+              <a href="/update_account">Edit Existing Bank Account</a>
             </li>
           </ul>
         </li>

@@ -463,16 +463,17 @@ def check_for_dups(user, account, df):
 
     merge_df = False
 
-    for index, row in df_1.iterrows():
-        if row[the_account.transDescriptionCol] == last_transaction.description:
-            if row[the_account.transCreditCol] == credit_val:
-                if row[the_account.transDebitCol] == debit_val:
+    for index, row in df_1.iterrows(): # goes through the last day and checks to see if there are any new values
+        if row[the_account.transDescriptionCol] != last_transaction.description:
+            if row[the_account.transCreditCol] != credit_val:
+                if row[the_account.transDebitCol] != debit_val:
                     row_num = index + 1
                     merge_df = True
-    df_1 = df_1.loc[row_num:]
+
     df_2 = df[df[the_account.transDateCol] > last_transaction.date]
 
     if merge_df:
+        df_1 = df_1.loc[row_num:]
         return_df = df_1 + df_2
     else:
         return_df = df_2
