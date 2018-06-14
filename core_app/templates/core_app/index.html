@@ -1,6 +1,7 @@
 
 {% extends "core_app/layout.html" %}
 {% block content %}
+{% load staticfiles %}
 
 <div class="container">
     <div class="card">
@@ -8,12 +9,156 @@
             <h3>Because Money Doesn't Grow on Trees</h3>
         </div>
         <div class="card-body">
-            <p> hello {{ user }}.  {{ message }}</p>
-            <p>If this is your first time here.  Press this button to get started <a href="/signup" class="btn btn-info">Sign up</a> </p>
-            <p>If you have been here before, please login here <a href="/login" class="btn btn-info">Login</a> </p>
+            <div class="row">
+                <div class="col-lg-4">
+                   <div class="card">
+                    <div class="card-header">
+                         hello {{ user }}.
+                     </div>
+                     <div class="card-body">
+                           <p id="main-message"> {{ message }} </p>
+                      </div>
+
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            If this is your first time here.  Press this button to get started.
+                         </div>
+                         <div class="card-body">
+                             <p>Evergreen Financial is currently in Beta testing.  You are encouraged to sign up but
+                                 please be aware there may be some kinks that still need to be worked out.</p>
+                                <a href="/signup" class="btn btn-info">Sign up</a>
+                          </div>
+
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            If you have been here before, please login here
+                         </div>
+                         <div class="card-body">
+                             <p>Welcom back.  We hope that your experience is a good one!</p>
+                                 <a href="/login" class="btn btn-info">Login</a>
+                          </div>
+
+                    </div>
+                </div>
+            </div>
+
+
 
         </div>
     </div>
+    <div class="card card-margin-top">
+        <div class="card-header">
+             What is Evergreen Financial?
+         </div>
+         <div class="card-body">
+
+          <div class="card-columns">
+           <div class="card" style="width:525px">
+                <div class="card-header">
+                    Lots of charts and graphs
+                 </div>
+                 <div class="card-body">
+                     <img class="card-img-bottom" src="{% static 'core_app/img/Charts.PNG' %}" alt="Spending Charts">
+                  </div>
+            </div>
+
+
+           <div class="card">
+                <div class="card-header">
+                    Keep your bank happy.
+                 </div>
+                 <div class="card-body">
+                    With Evergreen Financial you don't have to give out your bank accounts password.  There are quite a few banks
+                     out there that state giving out your password violates your terms of service and might and you might not be covered
+                     for fraud protection.  On Evergreen Financial you will have to downloadyour transactions from your
+                     bank and upload them to Evergreen Financial.  But this is a small price to pay for the added protection it provides.
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Reports on tags that you select
+                 </div>
+                 <div class="card-body">
+                     <img class="card-img-bottom" src="{% static 'core_app/img/Drill_down.PNG' %}" alt="Detailed Report">
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Know what information you are supplying
+                 </div>
+                 <div class="card-body">
+                    Only the bare minimum of information is collected. When you upload your bank statements, the only
+                     the following information is kept from each transaction:
+                     <ul>
+                         <li>Date</li>
+                         <li>Transaction description</li>
+                         <li>Transaction Debit (if it took money out of your account)</li>
+                         <li>Transaction Credit (if there was money put into your accout)</li>
+                     </ul>
+
+                     That is it!  Your account balance is not even stored.  You know what information you are giving up
+                     so you know how secure you are.
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Set Budgets and See Historical Data on Tags that you choose
+                 </div>
+                 <div class="card-body">
+                     <img class="card-img-bottom" src="{% static 'core_app/img/Drill_down_chart.PNG' %}" alt="Detailed Report">
+                     When you select a tag for drill-down information it will show you a specific historical chart just for that tag.
+                     Ever wonder if your insurance has gone up in the last year?  Do you want to know how much you are
+                     making this year compared to last?  One click provides these reports.
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Simple Tagging of Transactions
+                 </div>
+                 <div class="card-body">
+                     When you tag a transaction Evergreen Financial will search through your other transactions to see
+                     if there is a match and also tag that record.  This keeps the amount of work you need to do to a minimum.
+                     You can also create rules to automatically tag transactions.  As well, every time you upload new transactions,
+                     it checks to see if it can tag any of the records before it asks you.
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Simple Tagging of Transactions
+                 </div>
+                 <div class="card-body">
+                     When you tag a transaction Evergreen Financial will search through your other transactions to see
+                     if there is a match and also tag that record.  This keeps the amount of work you need to do to a minimum.
+                     You can also create rules to automatically tag transactions.  As well, every time you upload new transactions,
+                     it checks to see if it can tag any of the records before it asks you.
+                  </div>
+            </div>
+
+           <div class="card">
+                <div class="card-header">
+                    Filter Tags and Categories
+                 </div>
+                 <div class="card-body">
+                     You can view your transactions by Year or Month.  There is also a separate chart for tags that do
+                     not have a fixed cost.  Looking for ways to save money?  You can set things like your mortgage and
+                     property taxes as a fixed cost and they will not appear in this chart.  It helps bring into focus
+                     where you can cut back on your spending.
+                  </div>
+            </div>
+
+          </div>
+          </div>
+    </div>
+
 </div>
 
 {% endblock %}

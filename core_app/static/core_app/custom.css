@@ -26,3 +26,11 @@ h6{padding-top: 20px;}
     min-width: 1em;
     margin-right: 0.5em;
 }
+
+#main-message{
+    color: blue;
+}
+
+.card-margin-top{
+    margin-top: 10px;
+}
